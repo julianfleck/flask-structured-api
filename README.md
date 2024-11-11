@@ -57,16 +57,20 @@ docker-compose exec api flask users create-admin
 
 ```
 flask-ai-api-boilerplate/
-├── app/
-│   ├── api/              # API endpoints
-│   │   └── v1/          # API version 1
-│   ├── core/            # Core functionality
-│   │   └── ai/         # AI service components
-│   ├── models/          # Database & schema models
-│   └── services/        # Business logic
-├── tests/               # Test suite
-├── docker/             # Docker configurations
-└── docs/               # Documentation
+├── app/ # Application package
+│ ├── api/ # API endpoints
+│ │ └── v1/ # API version 1
+│ ├── core/ # Core functionality
+│ │ └── ai/ # AI service components
+│ ├── models/ # Database & schema models
+│ └── services/ # Business logic
+├── tests/ # Test suite
+├── docker/ # Docker configurations
+├── docs/ # Documentation
+│ ├── architecture/ # Architecture docs
+│ ├── guides/ # User guides
+│ └── development/ # Development docs
+└── CHANGELOG.md # Version history
 ```
 
 ## 💡 Example Usage
