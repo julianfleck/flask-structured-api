@@ -67,6 +67,60 @@ class CacheManager:
         return value
 ```
 
+### Background Tasks
+
+Celery-based task processing system:
+- Async task execution
+- Task scheduling
+- Retry policies
+- Dead letter queues
+
+Configuration:
+```python
+# app/core/tasks.py
+class TaskManager:
+    def __init__(self):
+        self.celery = Celery('app', broker=settings.REDIS_URL)
+        self.default_retry_limit = 3
+
+    def create_task(self, func, retry_limit: int = None):
+        """Create a new background task"""
+        @self.celery.task(bind=True, max_retries=retry_limit or self.default_retry_limit)
+        def wrapped_task(self, *args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                self.retry(exc=e)
+        return wrapped_task
+```
+
+### Warning Collection
+
+Centralized warning accumulation system:
+- Warning levels (INFO, WARN, ERROR)
+- Context preservation
+- Aggregation support
+- Audit trail
+
+Implementation:
+```python
+# app/core/warnings.py
+class WarningCollector:
+    def __init__(self):
+        self.warnings = []
+        self.context = {}
+
+    def add_warning(self, message: str, level: str = "WARN", context: dict = None):
+        """Add a new warning with context"""
+        warning = {
+            "message": message,
+            "level": level,
+            "timestamp": datetime.utcnow(),
+            "context": {**self.context, **(context or {})}
+        }
+        self.warnings.append(warning)
+```
+
 ### Rate Limiting
 
 Configurable rate limiting using Redis:
@@ -159,6 +213,95 @@ class APIError(Exception):
         self.code = code
         self.status = status
 ```
+
+You're right - more descriptive error codes are better practice. Here's an updated version of the error handling section for the architecture README:
+
+```markdown:docs/architecture/README.md
+### Error Handling
+
+We use semantic error codes that combine a domain prefix with a descriptive error type:
+
+```python
+# app/core/exceptions.py
+class APIError(Exception):
+    """Base API error class"""
+    def __init__(
+        self, 
+        message: str,
+        code: str = None,
+        status: int = 400,
+        details: dict = None
+    ):
+        self.message = message
+        self.code = code
+        self.status = status
+        self.details = details or {}
+```
+
+### Example error codes and their meanings:
+
+```python
+ERROR_CODES = {
+    # Authentication errors (AUTH_*)
+    'AUTH_INVALID_CREDENTIALS': 'Invalid username or password provided',
+    'AUTH_TOKEN_EXPIRED': 'Authentication token has expired',
+    'AUTH_TOKEN_INVALID': 'Invalid authentication token',
+    'AUTH_INSUFFICIENT_PERMISSIONS': 'User lacks required permissions',
+    
+    # Validation errors (VAL_*)
+    'VAL_MISSING_FIELD': 'Required field is missing',
+    'VAL_INVALID_FORMAT': 'Field format is invalid',
+    'VAL_CONSTRAINT_VIOLATION': 'Field value violates constraints',
+    
+    # Resource errors (RES_*)
+    'RES_NOT_FOUND': 'Requested resource not found',
+    'RES_ALREADY_EXISTS': 'Resource already exists',
+    'RES_CONFLICT': 'Resource state conflict',
+    
+    # AI Service errors (AI_*)
+    'AI_PROVIDER_ERROR': 'AI provider returned an error',
+    'AI_INVALID_RESPONSE': 'AI response failed validation',
+    'AI_CONTENT_POLICY': 'Content policy violation',
+    'AI_TOKEN_LIMIT': 'Token limit exceeded',
+    
+    # Rate limiting errors (RATE_*)
+    'RATE_LIMIT_EXCEEDED': 'Rate limit exceeded for this endpoint',
+    'RATE_INVALID_CONFIG': 'Invalid rate limit configuration',
+    
+    # Database errors (DB_*)
+    'DB_CONNECTION_ERROR': 'Database connection failed',
+    'DB_CONSTRAINT_ERROR': 'Database constraint violation',
+    'DB_TRANSACTION_ERROR': 'Transaction failed',
+    
+    # System errors (SYS_*)
+    'SYS_INTERNAL_ERROR': 'Internal server error',
+    'SYS_SERVICE_UNAVAILABLE': 'Service temporarily unavailable',
+    'SYS_INVALID_CONFIG': 'Invalid system configuration'
+}
+```
+
+Example error response:
+```json
+{
+    "success": false,
+    "error": {
+        "code": "AUTH_INVALID_CREDENTIALS",
+        "message": "Invalid username or password provided",
+        "details": {
+            "field": "password",
+            "reason": "incorrect_password",
+            "attempts_remaining": 2
+        }
+    }
+}
+```
+
+Benefits of this approach:
+- Self-documenting error codes
+- Domain-specific error grouping
+- Consistent error handling
+- Detailed error context
+- Easy error tracking and analytics
 
 ## Directory Structure
 
