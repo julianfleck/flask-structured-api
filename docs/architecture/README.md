@@ -154,6 +154,30 @@ def protected_route():
     pass
 ```
 
+### API Versioning
+
+URL-based versioning strategy:
+- Semantic versioning (MAJOR.MINOR)
+- Version lifecycle management
+- Deprecation policies
+- Migration tooling
+
+Example implementation:
+```python
+# app/core/versioning.py
+class VersionManager:
+    def __init__(self):
+        self.current_version = "2.0"
+        self.supported_versions = ["1.0", "2.0"]
+        self.deprecated_versions = ["1.0"]
+    
+    def is_supported(self, version: str) -> bool:
+        return version in self.supported_versions
+    
+    def is_deprecated(self, version: str) -> bool:
+        return version in self.deprecated_versions
+```
+
 ## AI Service Integration
 
 Modular AI service integration supporting multiple providers:

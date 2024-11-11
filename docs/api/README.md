@@ -32,6 +32,41 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
   -d '{"email": "user@example.com", "password": "your_password"}'
 ```
 
+## API Versioning
+
+We use URL-based versioning to ensure backward compatibility:
+
+```bash
+https://api.example.com/v1/users
+https://api.example.com/v2/users
+```
+
+### Version Policy
+
+- Major versions (v1, v2) for breaking changes
+- Minor versions handled through response fields
+- Minimum 6 months deprecation notice
+- Multiple versions supported simultaneously
+
+### Version Lifecycle
+
+1. **Active**: Current recommended version
+2. **Maintained**: Still supported, but deprecated
+3. **Sunset**: Read-only mode, 30 days until EOL
+4. **End-of-Life**: Version discontinued
+
+### Version Headers
+
+All responses include version information:
+```json
+{
+    "success": true,
+    "data": {},
+    "api_version": "2.1",
+    "deprecated": false
+}
+```
+
 ## Response Format
 
 All API responses follow a standard format:
