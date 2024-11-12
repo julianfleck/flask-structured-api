@@ -1,4 +1,9 @@
 # app/core/warnings.py
+from dataclasses import dataclass, field
+from typing import List, Dict, ClassVar
+from datetime import datetime
+
+
 @dataclass
 class Warning:
     """Warning message structure"""

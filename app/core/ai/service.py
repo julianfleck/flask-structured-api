@@ -5,6 +5,11 @@ from pydantic import BaseModel, ValidationError
 import time
 import random
 
+from app.core.ai.base import AIProvider, AIResponse
+from app.core.exceptions import AIResponseValidationError
+from app.models.core.ai import AICompletionRequest
+from app.core.warnings import WarningCollector
+
 
 class AIService:
     def __init__(self, provider: AIProvider):

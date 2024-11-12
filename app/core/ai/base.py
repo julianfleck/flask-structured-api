@@ -2,6 +2,7 @@
 from typing import Protocol, Type, TypeVar, Optional, Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel, Field
+from app.models.core.ai import AICompletionRequest
 
 T = TypeVar('T', bound=BaseModel)
 
