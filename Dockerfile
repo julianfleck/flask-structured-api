@@ -18,7 +18,8 @@ COPY . .
 # Set environment variables
 ENV FLASK_APP=app.main:create_app
 ENV FLASK_ENV=development
+ENV API_PORT=2342
 
-EXPOSE 5000
+EXPOSE ${API_PORT}
 
 CMD ["flask", "run", "--host=0.0.0.0"] 
