@@ -5,6 +5,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # API Settings
+    API_NAME: str = "Flask AI API Boilerplate"
     API_VERSION: str = "1.0.0"
     API_DEBUG: bool = False
     API_HOST: str = "0.0.0.0"
