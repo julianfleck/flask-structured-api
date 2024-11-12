@@ -12,6 +12,7 @@ alembic>=1.7.0
 # Security
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
+PyJWT>=2.8.0
 
 # AI
 openai>=1.0.0
