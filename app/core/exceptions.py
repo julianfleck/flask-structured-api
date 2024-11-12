@@ -5,10 +5,11 @@ from typing import Any, Dict
 class APIError(Exception):
     """Base API error"""
 
-    def __init__(self, message: str, code: str = None, details: dict = None):
+    def __init__(self, message: str, code: str = None, details: dict = None, status_code: int = 400):
         self.message = message
         self.code = code or self.__class__.__name__
         self.details = details or {}
+        self.status_code = status_code
 
 
 class ValidationError(APIError):

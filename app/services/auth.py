@@ -22,7 +22,7 @@ class AuthService:
             raise APIError(
                 message="User already exists",
                 code="AUTH_USER_EXISTS",
-                status=400
+                status_code=400
             )
 
         # Create user
@@ -47,14 +47,14 @@ class AuthService:
             raise APIError(
                 message="Invalid email or password",
                 code="AUTH_INVALID_CREDENTIALS",
-                status=401
+                status_code=401
             )
 
         if not user.is_active:
             raise APIError(
                 message="User account is disabled",
                 code="AUTH_ACCOUNT_DISABLED",
-                status=401
+                status_code=401
             )
 
         access_token = Auth.create_token(user.id)
