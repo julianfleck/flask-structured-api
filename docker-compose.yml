@@ -5,9 +5,8 @@ services:
     build: .
     ports:
       - "5000:5000"
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/api
-      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
     depends_on:
       - db
     volumes:
