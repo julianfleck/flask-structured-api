@@ -36,6 +36,13 @@ def cleanup_socket(sock):
 
 def create_app() -> Flask:
     """Create and configure Flask application"""
+    print("🔍 Debug environment variables:")
+    print(f"FLASK_APP: {os.getenv('FLASK_APP')}")
+    print(f"FLASK_ENV: {os.getenv('FLASK_ENV')}")
+    print(f"API_DEBUG: {settings.API_DEBUG}")
+    print(f"API_HOST: {settings.API_HOST}")
+    print(f"API_PORT: {settings.API_PORT}")
+
     # Only enable debugpy in main process (not Flask reloader)
     if settings.API_DEBUG and os.getenv('DEBUGPY_ENABLE') and not os.environ.get('WERKZEUG_RUN_MAIN'):
         try:
@@ -52,13 +59,21 @@ def create_app() -> Flask:
     app = OpenAPI(__name__)
     app.config.from_object(settings)
 
+    # Add SQLAlchemy config
+    app.config['SQLALCHEMY_DATABASE_URI'] = settings.DATABASE_URL
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Initialize database and migrations
+    from app.core.db import init_migrations
+    init_migrations(app)
+
     # Register error handlers
     @app.errorhandler(APIError)
     def handle_api_error(error):
         return ErrorResponse(
             message=error.message,
             error={"code": error.code, "details": error.details}
-        ).dict(), error.status_code or 400
+        ).dict(), error.status_code
 
     # Register blueprints
     from app.api.root import root_bp

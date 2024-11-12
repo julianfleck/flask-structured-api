@@ -1,6 +1,5 @@
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from functools import lru_cache
 
 
 class Settings(BaseSettings):
@@ -8,8 +7,8 @@ class Settings(BaseSettings):
     API_NAME: str = "Flask AI API Boilerplate"
     API_VERSION: str = "1.0.0"
     API_DEBUG: bool = False
-    API_HOST: str = "0.0.0.0"
-    API_PORT: int = 5000
+    API_HOST: str = "${API_HOST}"
+    API_PORT: int = "${API_PORT}"
     ENVIRONMENT: str = "development"
     FLASK_APP: str = "app.main:create_app"
     FLASK_ENV: str = "development"
@@ -58,19 +57,33 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[str] = None
     PROMETHEUS_ENABLED: bool = False
 
+    # Database Backups
+    BACKUP_SCHEDULE: str = "@daily"  # Cron schedule expression
+    BACKUP_KEEP_DAYS: int = 7
+    BACKUP_KEEP_WEEKS: int = 4
+    BACKUP_KEEP_MONTHS: int = 6
+    BACKUP_COMPRESSION: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="allow"
+        extra="allow",
+        env_nested_delimiter="__",
+        # Force environment variable reload
+        env_prefix="",
+        use_enum_values=True,
     )
 
 
-@lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance"""
+    """Get settings instance"""
     return Settings()
 
 
 # Create a global settings instance
 settings = get_settings()
+
+# Add debug print to verify settings
+print(
+    f"🔧 Loaded settings - API_PORT: {settings.API_PORT}, API_HOST: {settings.API_HOST}")

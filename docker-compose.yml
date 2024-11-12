@@ -5,13 +5,17 @@ services:
     build: .
     ports:
       - "${API_PORT}:${API_PORT}"
+      - "${DEBUGPY_PORT}:${DEBUGPY_PORT}"
     env_file:
       - .env
-    depends_on:
-      - db
+    environment:
+      - FLASK_APP=${FLASK_APP}
+      - API_HOST=${API_HOST}
+      - API_PORT=${API_PORT}
+      - DEBUGPY_FLAG=--debugpy
     volumes:
       - .:/app
-    command: flask run --host=${API_HOST} --port=${API_PORT}
+    entrypoint: ["/app/docker/entrypoint.sh"]
 
   db:
     image: postgres:14-alpine
@@ -23,6 +27,30 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d api"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backup:
+    build: .
+    volumes:
+      - backup_data:/backups
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+      - POSTGRES_DB=${POSTGRES_DB:-api_prod}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-@daily}
+      - BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-7}
+      - BACKUP_KEEP_WEEKS=${BACKUP_KEEP_WEEKS:-4}
+      - BACKUP_KEEP_MONTHS=${BACKUP_KEEP_MONTHS:-6}
+      - BACKUP_COMPRESSION=${BACKUP_COMPRESSION:-true}
+    command: crond -f -d 8
+    depends_on:
+      - db
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  backup_data: 

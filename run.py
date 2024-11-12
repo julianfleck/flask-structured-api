@@ -12,10 +12,13 @@ load_dotenv()
 
 def run_app(debug=True, use_debugpy=False):
     """Run the Flask application with optional remote debugging support"""
+    print(f"🚀 Starting app with debug={debug}, debugpy={use_debugpy}")
+
     if use_debugpy and not os.environ.get('WERKZEUG_RUN_MAIN'):
         try:
             import debugpy
             debugpy_port = int(os.getenv('DEBUGPY_PORT', '5678'))
+            print(f"🔍 Attempting to start debugpy on port {debugpy_port}")
             debugpy.listen(('0.0.0.0', debugpy_port))
             print(f"🐛 Debugpy is listening on port {debugpy_port}")
         except ImportError:
@@ -27,6 +30,7 @@ def run_app(debug=True, use_debugpy=False):
 
     app = create_app()
     if not app:
+        print("❌ Failed to create Flask app")
         return
 
     host = os.getenv("API_HOST", "0.0.0.0")
@@ -38,8 +42,7 @@ def run_app(debug=True, use_debugpy=False):
         port=port,
         debug=debug,
         use_reloader=True,
-        reloader_type='stat',
-        extra_files=['.env']  # Watch .env file for changes
+        reloader_type='stat'
     )
 
 
