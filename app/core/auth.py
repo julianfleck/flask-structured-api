@@ -7,6 +7,7 @@ from flask import request, g, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.core.exceptions import APIError
+from app.models.responses.auth import TokenResponse
 
 
 class Auth:
@@ -64,6 +65,38 @@ class Auth:
                 status=401
             )
 
+    @staticmethod
+    def create_refresh_token(user_id: int) -> str:
+        """Create refresh token for user"""
+        expires_delta = timedelta(days=30)  # Refresh tokens last 30 days
+        expire = datetime.utcnow() + expires_delta
+
+        to_encode = {
+            'exp': expire,
+            'sub': str(user_id),
+            'iat': datetime.utcnow(),
+            'type': 'refresh'  # Mark as refresh token
+        }
+
+        encoded_jwt = jwt.encode(
+            to_encode,
+            current_app.config['JWT_SECRET_KEY'],
+            algorithm='HS256'
+        )
+        return encoded_jwt
+
+    @staticmethod
+    def create_tokens(user_id: int) -> TokenResponse:
+        """Create both access and refresh tokens"""
+        access_token = Auth.create_token(user_id)
+        refresh_token = Auth.create_refresh_token(user_id)
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=current_app.config['ACCESS_TOKEN_EXPIRE_MINUTES'] * 60
+        )
+
 
 def require_auth(f):
     """Decorator to require authentication"""
@@ -112,11 +145,29 @@ def require_roles(roles: List[str]):
                     status=401
                 )
 
-            # Note: User roles should be fetched from database
-            # This is a placeholder for the actual implementation
-            user_roles = ['user']  # Replace with DB lookup
+            # Get user from database
+            from app.services.auth import AuthService
+            from app.core.db import get_db
 
-            if not any(role in roles for role in user_roles):
+            db = next(get_db())
+            auth_service = AuthService(db)
+            user = auth_service.get_user_by_id(g.user_id)
+
+            if not user:
+                raise APIError(
+                    message="User not found",
+                    code="AUTH_USER_NOT_FOUND",
+                    status=401
+                )
+
+            if not user.is_active:
+                raise APIError(
+                    message="User account is disabled",
+                    code="AUTH_ACCOUNT_DISABLED",
+                    status=401
+                )
+
+            if user.role.value not in roles:
                 raise APIError(
                     message="Insufficient permissions",
                     code="AUTH_INSUFFICIENT_PERMISSIONS",
