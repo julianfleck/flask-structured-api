@@ -20,7 +20,7 @@ class ErrorResponse(APIResponse):
     """Error response model for API errors"""
     success: bool = False
     error: ErrorDetail
-    status: int = 400
+    status: int
 
 
 class SuccessResponse(APIResponse):

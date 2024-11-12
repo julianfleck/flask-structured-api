@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     CORS_ORIGINS: str = "*"
     ALLOWED_HOSTS: str = "*"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True

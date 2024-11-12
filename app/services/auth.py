@@ -57,12 +57,7 @@ class AuthService:
                 status_code=401
             )
 
-        access_token = Auth.create_token(user.id)
-
-        return TokenResponse(
-            access_token=access_token,
-            expires_in=3600  # 1 hour
-        )
+        return Auth.create_tokens(user.id)
 
     def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""

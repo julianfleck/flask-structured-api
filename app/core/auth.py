@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.core.exceptions import APIError
 from app.models.responses.auth import TokenResponse
+from app.core.config import settings
 
 
 class Auth:
@@ -26,7 +27,7 @@ class Auth:
         """Create JWT token for user"""
         if expires_delta is None:
             expires_delta = timedelta(
-                minutes=current_app.config['ACCESS_TOKEN_EXPIRE_MINUTES'])
+                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
         expire = datetime.utcnow() + expires_delta
         to_encode = {
@@ -37,7 +38,7 @@ class Auth:
 
         encoded_jwt = jwt.encode(
             to_encode,
-            current_app.config['JWT_SECRET_KEY'],
+            settings.JWT_SECRET_KEY,
             algorithm='HS256'
         )
         return encoded_jwt
@@ -48,7 +49,7 @@ class Auth:
         try:
             payload = jwt.decode(
                 token,
-                current_app.config['JWT_SECRET_KEY'],
+                settings.JWT_SECRET_KEY,
                 algorithms=['HS256']
             )
             return payload
@@ -80,7 +81,7 @@ class Auth:
 
         encoded_jwt = jwt.encode(
             to_encode,
-            current_app.config['JWT_SECRET_KEY'],
+            settings.JWT_SECRET_KEY,
             algorithm='HS256'
         )
         return encoded_jwt
@@ -94,7 +95,7 @@ class Auth:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_in=current_app.config['ACCESS_TOKEN_EXPIRE_MINUTES'] * 60
+            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         )
 
 
@@ -107,7 +108,7 @@ def require_auth(f):
             raise APIError(
                 message="Missing authorization header",
                 code="AUTH_MISSING_TOKEN",
-                status=401
+                status_code=401
             )
 
         try:
@@ -116,7 +117,7 @@ def require_auth(f):
                 raise APIError(
                     message="Invalid token type",
                     code="AUTH_INVALID_TOKEN_TYPE",
-                    status=401
+                    status_code=401
                 )
 
             payload = Auth.decode_token(token)
@@ -127,7 +128,7 @@ def require_auth(f):
             raise APIError(
                 message="Invalid authorization header format",
                 code="AUTH_INVALID_HEADER",
-                status=401
+                status_code=401
             )
 
     return decorated

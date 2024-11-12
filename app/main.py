@@ -72,7 +72,8 @@ def create_app() -> Flask:
     def handle_api_error(error):
         return ErrorResponse(
             message=error.message,
-            error={"code": error.code, "details": error.details}
+            error={"code": error.code, "details": error.details},
+            status=error.status_code  # Add this line to set the correct status
         ).dict(), error.status_code
 
     # Register blueprints
