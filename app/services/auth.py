@@ -1,11 +1,14 @@
 from typing import Optional
 from sqlmodel import Session, select
+import jwt
 
 from app.core.auth import Auth
-from app.core.exceptions import APIError
+from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
 from app.models.core.auth import User, UserRole
 from app.models.requests.auth import RegisterRequest, LoginRequest
 from app.models.responses.auth import TokenResponse, UserResponse
+from app.core.config import settings
+from app.core.exceptions import APIError
 
 
 class AuthService:
@@ -44,17 +47,12 @@ class AuthService:
         user = self.get_user_by_email(request.email)
 
         if not user or not Auth.verify_password(request.password, user.hashed_password):
-            raise APIError(
-                message="Invalid email or password",
-                code="AUTH_INVALID_CREDENTIALS",
-                status_code=401
-            )
+            raise InvalidCredentialsError()
 
         if not user.is_active:
-            raise APIError(
+            raise AuthenticationError(
                 message="User account is disabled",
-                code="AUTH_ACCOUNT_DISABLED",
-                status_code=401
+                code="AUTH_ACCOUNT_DISABLED"
             )
 
         return Auth.create_tokens(user.id)
@@ -68,3 +66,49 @@ class AuthService:
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         """Get user by ID"""
         return self.db.get(User, user_id)
+
+    def refresh_token(self, refresh_token: str) -> TokenResponse:
+        """Refresh access token using refresh token"""
+        try:
+            # Decode and validate refresh token
+            payload = Auth.decode_token(refresh_token)
+
+            # Verify it's a refresh token
+            if payload.get('type') != 'refresh':
+                raise APIError(
+                    message="Invalid token type",
+                    code="AUTH_INVALID_TOKEN_TYPE",
+                    status_code=401
+                )
+
+            user_id = int(payload['sub'])
+            user = self.get_user_by_id(user_id)
+
+            if not user or not user.is_active:
+                raise APIError(
+                    message="User not found or inactive",
+                    code="AUTH_USER_INVALID",
+                    status_code=401
+                )
+
+            # Create new access token
+            access_token = Auth.create_token(user_id)
+
+            return TokenResponse(
+                access_token=access_token,
+                refresh_token=refresh_token,  # Return same refresh token
+                expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            )
+
+        except jwt.ExpiredSignatureError:
+            raise APIError(
+                message="Refresh token has expired",
+                code="AUTH_REFRESH_TOKEN_EXPIRED",
+                status_code=401
+            )
+        except jwt.InvalidTokenError:
+            raise APIError(
+                message="Invalid refresh token",
+                code="AUTH_REFRESH_TOKEN_INVALID",
+                status_code=401
+            )
