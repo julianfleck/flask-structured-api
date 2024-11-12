@@ -11,3 +11,4 @@ mypy>=1.0.0
 
 # Development
 pre-commit>=2.17.0
+debugpy>=1.8.0  # Remote debugging support
