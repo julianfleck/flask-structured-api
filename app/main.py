@@ -61,6 +61,8 @@ def create_app() -> Flask:
         ).dict(), error.status_code or 400
 
     # Register blueprints
+    from app.api.root import root_bp
+    app.register_blueprint(root_bp)
     from app.api.v1 import api_v1
     app.register_blueprint(api_v1)
 
