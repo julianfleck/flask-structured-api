@@ -2,7 +2,43 @@
 
 All notable changes to the Flask API Boilerplate will be documented in this file.
 
-## [Unreleased]
+# [Unreleased]
+
+## [0.2.0] - 2024-11-12
+
+### Added
+- Authentication endpoints for user registration and login
+- Database connection handling with retry mechanism
+- SQLModel integration with Flask-Migrate
+- Standardized API response format with success/error handling
+- Custom exception handling for API errors
+- Automated database backup system with configurable schedules
+- Crontab generation script for automated backups
+- Backup retention policy with daily/weekly/monthly options
+- Development environment setup with debugpy support
+- Proper environment-based dependency management in Docker
+- Supervisor configuration for process management
+- Debug logging for application startup and configuration
+- Environment variable validation in settings
+
+### Changed
+- Enhanced error responses to include status codes and error details
+- Improved database initialization process with proper migration support
+- Restructured Docker configuration for backup service
+- Added backup volume management in docker-compose
+- Modified Docker build process to support development/production environments
+- Updated supervisor configuration for better log handling
+- Standardized port configuration across development and production
+- Improved environment variable handling in Docker setup
+
+### Fixed
+- Database connection issues during application startup
+- Error handling to return consistent JSON responses instead of HTML errors
+- Syntax error in crontab generation script f-string formatting
+- Debugpy installation in development environment
+- Port binding issues in Docker configuration
+- Environment variable interpolation in settings
+- Process management in Docker containers
 
 ## [0.2.0] - 2024-11-12
 
