@@ -1,5 +1,5 @@
 from flask import Blueprint, current_app
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 
 root_bp = Blueprint('root', __name__)
 

@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 from app.core.config import settings
 
 health_bp = Blueprint('health', __name__)

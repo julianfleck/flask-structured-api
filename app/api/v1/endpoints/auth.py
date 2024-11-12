@@ -1,7 +1,7 @@
 from flask import Blueprint, request, g
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 from app.services.auth import AuthService
-from app.models.requests.auth import RegisterRequest, LoginRequest
+from app.models.requests.auth import RegisterRequest, LoginRequest, RefreshTokenRequest
 from app.models.responses.auth import TokenResponse, UserResponse
 from app.core.db import get_session
 from app.core.auth import require_auth
@@ -62,4 +62,21 @@ def get_current_user():
     return SuccessResponse(
         message="Current user retrieved successfully",
         data=UserResponse.from_orm(user).dict()
+    ).dict()
+
+
+@auth_bp.route('/refresh', methods=['POST'])
+def refresh_token():
+    """Refresh access token using refresh token"""
+    data = request.get_json()
+    refresh_data = RefreshTokenRequest(**data)
+
+    db = next(get_session())
+    auth_service = AuthService(db)
+
+    token = auth_service.refresh_token(refresh_data.refresh_token)
+
+    return SuccessResponse(
+        message="Token refreshed successfully",
+        data=token.dict()
     ).dict()
