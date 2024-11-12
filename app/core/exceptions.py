@@ -1,4 +1,7 @@
 # app/core/exceptions.py
+from typing import Any, Dict
+
+
 class APIError(Exception):
     """Base API error"""
 
