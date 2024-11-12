@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, current_app
 from werkzeug.exceptions import HTTPException, BadRequest, Unauthorized, Forbidden, NotFound
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from jwt.exceptions import PyJWTError
@@ -29,23 +29,33 @@ def register_error_handlers(app: Flask):
 
     @app.errorhandler(SQLAlchemyError)
     def handle_db_error(error):
-        if isinstance(error, IntegrityError):
-            return ErrorResponse(
-                message="Database constraint violation",
-                error=DatabaseErrorDetail(
-                    code="DB_INTEGRITY_ERROR",
-                    operation=error.__class__.__name__,
-                    constraint=str(error.orig)
-                ),
-                status=409
-            ).dict(), 409
+        """Handle database errors"""
+        error_msg = str(error)
+        error_details = {
+            "error_type": error.__class__.__name__,
+            "statement": getattr(error, 'statement', None),
+        }
 
+        if current_app.debug:
+            # add more details in debug mode
+            error_details.update({
+                "full_error": str(error.__dict__),
+                "params": getattr(error, 'params', None),
+                "orig": str(getattr(error, 'orig', None))
+            })
+
+        detail = DatabaseErrorDetail(
+            code="DB_ERROR",
+            operation="query",
+            message=error_msg,
+            details=error_details
+        )
+
+        debug_msg = "Database error: {0}".format(error_msg)
         return ErrorResponse(
-            message="Database error occurred",
-            error=DatabaseErrorDetail(
-                code="DATABASE_ERROR",
-                operation=error.__class__.__name__
-            ),
+            success=False,
+            message=debug_msg if current_app.debug else "Database error occurred",
+            error=detail.dict(),
             status=500
         ).dict(), 500
 
