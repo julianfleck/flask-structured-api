@@ -4,15 +4,41 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-11-12
+
 ### Added
 - Initial project structure and documentation
-- Implementation guidelines through comprehensive documentation:
-  - Architecture overview and patterns
-  - API endpoint specifications
-  - Authentication flow
-  - Error handling patterns
-  - Rate limiting design
-  - AI service integration patterns
+- Core API Features:
+  - Flask API initialization with OpenAPI/Swagger UI support
+  - Remote debugging support with debugpy
+  - Root blueprint registration
+  - Standardized API port configuration
+  - Development server implementation (run.py)
+  - Database connection and session management with SQLModel
+  - Core authentication module with JWT support
+  - Role-based access control implementation
+  - AI service integration with validation and retries
+  - Warning system with collector utility
+  - Core exception handling system
+  - Standardized API response models
+
+### Infrastructure
+- Docker setup and configuration
+  - Development environment setup
+  - Database environment configuration
+  - Port standardization across Docker files
+
+### Models & Responses
+- Initial domain and request models
+- Response models for authentication and items
+- Core database model implementation with SQLModel
+- Settings management with Pydantic
+
+
+## [0.1.0] - 2024-11-11
+
+- Initial repository setup
+- Basic project structure
 
 ### Documentation Added
 - Core documentation (`docs/README.md`):
@@ -65,8 +91,3 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 - Documentation-driven development approach
 - Type hints and validation patterns
 - Testing structure and methodology
-
-## [0.1.0] - 2024-11-11
-
-- Initial repository setup
-- Basic project structure
