@@ -1,12 +1,9 @@
 from flask import Flask
 from flask_openapi3 import OpenAPI
 from app.core.config import settings
-from app.core.exceptions import APIError
-from app.core.responses import ErrorResponse
 import os
 import socket
-import time
-import atexit
+from app.core.handlers import register_error_handlers
 
 
 def is_port_in_use(port: int) -> bool:
@@ -68,13 +65,7 @@ def create_app() -> Flask:
     init_migrations(app)
 
     # Register error handlers
-    @app.errorhandler(APIError)
-    def handle_api_error(error):
-        return ErrorResponse(
-            message=error.message,
-            error={"code": error.code, "details": error.details},
-            status=error.status_code  # Add this line to set the correct status
-        ).dict(), error.status_code
+    register_error_handlers(app)
 
     # Register blueprints
     from app.api.root import root_bp

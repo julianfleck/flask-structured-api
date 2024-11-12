@@ -24,5 +24,5 @@ class ErrorDetail(BaseModel):
 class ErrorResponse(APIResponse):
     """Error response model for API errors"""
     success: bool = False
-    error: ErrorDetail
+    error: Dict[str, Any]
     status: int
