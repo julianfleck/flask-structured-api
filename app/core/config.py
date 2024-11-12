@@ -10,13 +10,15 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 5000
     ENVIRONMENT: str = "development"
+    FLASK_APP: str = "app.main:create_app"
+    FLASK_ENV: str = "development"
 
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite:///./test.db"
     DB_POOL_SIZE: int = 20
 
     # Redis
-    REDIS_URL: str
+    REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_MAX_CONNECTIONS: int = 100
 
     # Security
@@ -58,7 +60,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True
+        case_sensitive=True,
+        extra="allow"
     )
 
 
