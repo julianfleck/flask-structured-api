@@ -3,18 +3,9 @@ from typing import Protocol, Type, TypeVar, Optional, Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel, Field
 from app.models.core.ai import AICompletionRequest
+from app.models.responses.ai import AIResponse
 
 T = TypeVar('T', bound=BaseModel)
-
-
-class AIResponse(BaseModel):
-    """Standardized AI response format"""
-    content: str
-    usage: Dict[str, int]
-    model: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    warnings: List[str] = Field(default_factory=list)
 
 
 class AIProvider(Protocol):

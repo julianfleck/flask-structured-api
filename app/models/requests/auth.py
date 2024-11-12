@@ -14,3 +14,8 @@ class LoginRequest(BaseRequestModel):
     """Login request"""
     email: EmailStr
     password: str
+
+
+class RefreshTokenRequest(BaseRequestModel):
+    """Refresh token request"""
+    refresh_token: str
