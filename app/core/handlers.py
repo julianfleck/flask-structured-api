@@ -60,14 +60,35 @@ def register_error_handlers(app: Flask):
             status=500
         ).dict(), 500
 
+    @app.errorhandler(Exception)
+    def handle_generic_error(error: Exception) -> Response:
+        """Handle all unhandled exceptions"""
+        if isinstance(error, APIError):
+            # Let the APIError handler deal with it
+            return handle_api_error(error)
+
+        error_detail = ErrorDetail(
+            code="INTERNAL_SERVER_ERROR",
+            details={"error": str(error)}
+        )
+
+        response = ErrorResponse(
+            success=False,
+            error=error_detail,
+            message="An unexpected error occurred"
+        )
+
+        return make_response(response.dict(), 500)
+
     @app.errorhandler(APIError)
     def handle_api_error(error: APIError) -> Response:
+        """Handle custom API errors"""
         if isinstance(error, HTTPException):
             error_detail = HTTPErrorDetail(
                 code=error.code,
                 status=error.code,
-                method=error.get_response().status,
-                path=error.description
+                method=request.method,
+                path=request.path
             )
         else:
             error_detail = ErrorDetail(
@@ -75,24 +96,13 @@ def register_error_handlers(app: Flask):
                 details=error.details
             )
 
-        # Get any collected warnings
-        warning_collector = WarningCollector()
-        warnings = [
-            f"{w.code}: {w.message} (Severity: {w.severity})"
-            for w in warning_collector.get_warnings()
-        ]
-
         response = ErrorResponse(
             success=False,
             error=error_detail,
-            message=error.message,
-            warnings=warnings  # Include warnings in response
+            message=error.message
         )
 
-        # Clear warnings after adding them to response
-        warning_collector.clear_warnings()
-
-        return make_response(response.model_dump(), getattr(error, 'status_code', 400))
+        return make_response(response.dict(), getattr(error, 'status_code', 400))
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(error):

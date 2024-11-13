@@ -2,6 +2,8 @@ from flask import Blueprint, current_app, g
 from app.models.responses import SuccessResponse
 from app.core.config import settings
 from app.utils.routes import get_filtered_routes
+from app.core.storage.decorators import store_api_data
+from app.models.enums import StorageType
 import platform
 import psutil
 import time
@@ -24,6 +26,11 @@ def check_database() -> bool:
 
 @health_bp.route('/health', methods=['GET'])
 @require_auth
+@store_api_data(
+    storage_type=StorageType.BOTH,
+    ttl_days=1,  # Keep health check data for 1 day
+    metadata={"check_type": "health"}
+)
 def health_check():
     """Health check endpoint that returns system status and component health."""
     start_time = time.time()

@@ -19,7 +19,10 @@ engine = create_engine(
 def init_migrations(app: Flask) -> None:
     """Initialize database migrations"""
     # Import all models to register them with SQLModel
-    from app.models import User, APIKey, Item, CoreModel
+    from app.models import (
+        User, APIKey, Item, CoreModel,
+        APIStorage, StorageBase
+    )
 
     # Create a SQLAlchemy database instance for Flask-Migrate
     db = SQLAlchemy(app)
