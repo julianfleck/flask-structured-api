@@ -18,19 +18,72 @@ All protected endpoints require a Bearer token in the Authorization header:
 Authorization: Bearer <your_token>
 ```
 
-### Getting a Token
+### Authentication Flow
 
-1. Create a new token using the CLI:
+1. **Register a New User**
 ```bash
-flask tokens create-token
+curl -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "your_password",
+    "full_name": "John Doe"
+  }'
 ```
 
-2. Or use the authentication endpoint:
+2. **Login to Get Tokens**
 ```bash
 curl -X POST http://localhost:5000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "your_password"}'
+  -d '{
+    "email": "user@example.com",
+    "password": "your_password"
+  }'
 ```
+
+The login response provides both access and refresh tokens:
+```json
+{
+    "success": true,
+    "data": {
+        "access_token": "eyJhbG...",
+        "refresh_token": "eyJhbG...",
+        "token_type": "bearer",
+        "expires_in": 3600
+    }
+}
+```
+
+### Token Management
+
+- Access tokens expire after 60 minutes
+- Refresh tokens are valid for 30 days
+- Use `/auth/refresh` to get a new access token:
+```bash
+curl -X POST http://localhost:5000/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "your_refresh_token"
+  }'
+```
+
+### Checking Authentication
+
+Verify your authentication status using the `/auth/me` endpoint:
+```bash
+curl -X GET http://localhost:5000/api/v1/auth/me \
+  -H "Authorization: Bearer your_access_token"
+```
+
+### Error Codes
+
+| Code | Description |
+|------|-------------|
+| `AUTH_INVALID_CREDENTIALS` | Wrong email or password |
+| `AUTH_TOKEN_EXPIRED` | Access token has expired |
+| `AUTH_REFRESH_TOKEN_EXPIRED` | Refresh token has expired |
+| `AUTH_USER_EXISTS` | Email already registered |
+| `AUTH_ACCOUNT_DISABLED` | User account is inactive |
 
 ## API Versioning
 
@@ -95,6 +148,41 @@ All API responses follow a standard format:
     "status": 400  // HTTP status code
 }
 ```
+
+### Validation Error Response
+```json
+{
+    "success": false,
+    "message": "Validation failed for RegisterRequest",
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "errors": [
+            {
+                "field": "email",
+                "message": "Invalid email address",
+                "type": "value_error.email"
+            }
+        ]
+    }
+}
+```
+
+All request validation errors follow a consistent structure:
+
+- message: A human-readable description of the validation failure
+- error.code: Always "VALIDATION_ERROR" for validation failures
+- error.errors: List of specific validation errors with field, message, and type
+- error.required_fields: List of missing required fields (if any)
+- error.details: Additional context including:
+  - total_errors: Number of validation errors
+  - schema: The request model that failed validation
+  - validation_context: Where the validation failed (usually "request_payload")
+
+This structure helps clients to:
+- Identify which fields need correction
+- Handle missing required fields specifically
+- Understand the validation context
+- Present user-friendly error messages
 
 ## Rate Limiting
 
