@@ -85,4 +85,8 @@ def create_app() -> Flask:
     app.register_blueprint(root_bp)
     app.register_blueprint(api_v1)
 
+    # Register CLI commands
+    from app.cli import init_cli
+    init_cli(app)
+
     return app
