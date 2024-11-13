@@ -143,7 +143,7 @@ To add custom AI endpoints, create new routes in `app/api/v1/endpoints/ai/`:
 ```python
 # app/api/v1/endpoints/ai/custom.py
 from flask import Blueprint
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 from app.core.auth import require_auth
 from app.core.ai import ai_service
 
