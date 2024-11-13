@@ -19,7 +19,7 @@ engine = create_engine(
 def init_migrations(app: Flask) -> None:
     """Initialize database migrations"""
     # Import all models to register them with SQLModel
-    from app.models.core.auth import User
+    from app.models.enums import UserRole
     from app.models.core.base import CoreModel
 
     # Create tables directly first time
