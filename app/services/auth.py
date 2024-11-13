@@ -3,7 +3,6 @@ from sqlmodel import Session, select
 import jwt
 from datetime import datetime
 
-from app.core.auth import Auth
 from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
 from app.models.user import User
 from app.models.enums import UserRole
@@ -11,6 +10,62 @@ from app.models.requests.auth import RegisterRequest, LoginRequest
 from app.models.responses.auth import TokenResponse, UserResponse
 from app.core.config import settings
 from app.core.exceptions import APIError
+
+
+class Auth:
+    @staticmethod
+    def generate_password_hash(password: str) -> str:
+        return generate_password_hash(password)
+
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        return check_password_hash(hashed_password, password)
+
+    @staticmethod
+    def create_tokens(user_id: int) -> TokenResponse:
+        access_token = Auth._create_token(
+            user_id,
+            settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+            settings.JWT_SECRET_KEY
+        )
+        refresh_token = Auth._create_token(
+            user_id,
+            settings.REFRESH_TOKEN_EXPIRE_MINUTES,
+            settings.JWT_REFRESH_SECRET_KEY,
+            token_type='refresh'
+        )
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        )
+
+    @staticmethod
+    def decode_token(token: str, refresh: bool = False) -> dict:
+        try:
+            secret = settings.JWT_REFRESH_SECRET_KEY if refresh else settings.JWT_SECRET_KEY
+            return jwt.decode(token, secret, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            raise APIError(
+                message="Token has expired",
+                code="AUTH_TOKEN_EXPIRED",
+                status_code=401
+            )
+        except jwt.InvalidTokenError:
+            raise APIError(
+                message="Invalid token",
+                code="AUTH_INVALID_TOKEN",
+                status_code=401
+            )
+
+    @staticmethod
+    def _create_token(user_id: int, expire_minutes: int, secret: str, token_type: str = 'access') -> str:
+        expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+        return jwt.encode(
+            {"sub": str(user_id), "exp": expire, "type": token_type},
+            secret,
+            algorithm="HS256"
+        )
 
 
 class AuthService:
@@ -117,5 +172,34 @@ class AuthService:
             raise APIError(
                 message="Invalid refresh token",
                 code="AUTH_REFRESH_TOKEN_INVALID",
+                status_code=401
+            )
+
+    def validate_token(self, token: str) -> User:
+        """Validate token and return user"""
+        try:
+            payload = Auth.decode_token(token)
+            user_id = int(payload['sub'])
+            user = self.get_user_by_id(user_id)
+
+            if not user or not user.is_active:
+                raise APIError(
+                    message="User not found or inactive",
+                    code="AUTH_USER_INVALID",
+                    status_code=401
+                )
+
+            return user
+
+        except jwt.ExpiredSignatureError:
+            raise APIError(
+                message="Token has expired",
+                code="AUTH_TOKEN_EXPIRED",
+                status_code=401
+            )
+        except jwt.InvalidTokenError:
+            raise APIError(
+                message="Invalid token",
+                code="AUTH_INVALID_TOKEN",
                 status_code=401
             )

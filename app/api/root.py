@@ -1,30 +1,32 @@
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, g
 from app.models.responses import SuccessResponse
+from app.utils.routes import get_endpoints_list
+from app.core.auth import optional_auth
 
 root_bp = Blueprint('root', __name__)
 
 
 @root_bp.route('/', methods=['GET'])
+@optional_auth
 def welcome():
     """Welcome endpoint that lists all available routes"""
-    endpoints = []
+    is_authenticated = hasattr(g, 'user')
 
-    for rule in current_app.url_map.iter_rules():
-        if 'static' in rule.endpoint:
-            continue
-
-        methods = [m for m in rule.methods if m not in ['HEAD', 'OPTIONS']]
-        endpoints.append({
-            'path': rule.rule,
-            'methods': methods,
-            'name': rule.endpoint
-        })
+    if is_authenticated:
+        message = "Welcome back {}! Here are your available endpoints:".format(
+            g.user.full_name)
+        endpoints = get_endpoints_list(check_auth=True)
+    else:
+        message = "Welcome! Please log in to access protected endpoints."
+        # Only show public endpoints for unauthenticated users
+        endpoints = get_endpoints_list(check_auth=False)
 
     return SuccessResponse(
-        message=f"Welcome to {current_app.config['API_NAME']}",
+        message=message,
         data={
             'name': current_app.config['API_NAME'],
             'version': current_app.config['API_VERSION'],
-            'endpoints': sorted(endpoints, key=lambda x: x['path'])
+            'authenticated': is_authenticated,
+            'endpoints': endpoints
         }
     ).dict()

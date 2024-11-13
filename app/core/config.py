@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -14,7 +15,7 @@ class Settings(BaseSettings):
     FLASK_ENV: str = "development"
 
     # Database
-    DATABASE_URL: str = "sqlite:///./test.db"
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
     DB_POOL_SIZE: int = 20
 
     # Redis
@@ -23,10 +24,16 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str
-    JWT_SECRET_KEY: str
     CORS_ORIGINS: str = "*"
     ALLOWED_HOSTS: str = "*"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # JWT Settings
+    JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
+    JWT_REFRESH_SECRET_KEY: str = Field(..., env="JWT_REFRESH_SECRET_KEY")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=10080, env="REFRESH_TOKEN_EXPIRE_MINUTES")  # 7 days
 
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True
