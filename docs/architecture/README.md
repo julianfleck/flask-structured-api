@@ -30,12 +30,14 @@ class User(CoreModel, table=True):
 ### Database Structure
 
 We use PostgreSQL with SQLModel for:
-- Type-safe database operations
-- Automatic schema validation
-- Migration management (Alembic)
-- Relationship handling
+
+-   Type-safe database operations
+-   Automatic schema validation
+-   Migration management (Alembic)
+-   Relationship handling
 
 Key concepts:
+
 ```python
 # Models are defined in app/models/
 # Database setup in app/core/db.py
@@ -45,12 +47,14 @@ Key concepts:
 ### Caching
 
 Redis-based caching system with:
-- Response caching
-- Rate limiting
-- Session storage
-- Background task queues
+
+-   Response caching
+-   Rate limiting
+-   Session storage
+-   Background task queues
 
 Configuration:
+
 ```python
 # app/core/cache.py
 class CacheManager:
@@ -70,12 +74,14 @@ class CacheManager:
 ### Background Tasks
 
 Celery-based task processing system:
-- Async task execution
-- Task scheduling
-- Retry policies
-- Dead letter queues
+
+-   Async task execution
+-   Task scheduling
+-   Retry policies
+-   Dead letter queues
 
 Configuration:
+
 ```python
 # app/core/tasks.py
 class TaskManager:
@@ -97,12 +103,14 @@ class TaskManager:
 ### Warning Collection
 
 Centralized warning accumulation system:
-- Warning levels (INFO, WARN, ERROR)
-- Context preservation
-- Aggregation support
-- Audit trail
+
+-   Warning levels (INFO, WARN, ERROR)
+-   Context preservation
+-   Aggregation support
+-   Audit trail
 
 Implementation:
+
 ```python
 # app/core/warnings.py
 class WarningCollector:
@@ -124,11 +132,13 @@ class WarningCollector:
 ### Rate Limiting
 
 Configurable rate limiting using Redis:
-- Global and per-endpoint limits
-- Burst handling
-- Custom rate limit rules
+
+-   Global and per-endpoint limits
+-   Burst handling
+-   Custom rate limit rules
 
 Example configuration:
+
 ```python
 # app/core/config.py
 RATE_LIMIT_ENABLED = True
@@ -139,12 +149,14 @@ RATE_LIMIT_WINDOW = 3600  # time window in seconds
 ### Authentication & Authorization
 
 JWT-based authentication system:
-- Token-based authentication
-- Role-based access control
-- Session management
-- Token refresh mechanism
+
+-   Token-based authentication
+-   Role-based access control
+-   Session management
+-   Token refresh mechanism
 
 Implementation:
+
 ```python
 # app/core/auth.py
 @require_auth
@@ -157,12 +169,14 @@ def protected_route():
 ### API Versioning
 
 URL-based versioning strategy:
-- Semantic versioning (MAJOR.MINOR)
-- Version lifecycle management
-- Deprecation policies
-- Migration tooling
+
+-   Semantic versioning (MAJOR.MINOR)
+-   Version lifecycle management
+-   Deprecation policies
+-   Migration tooling
 
 Example implementation:
+
 ```python
 # app/core/versioning.py
 class VersionManager:
@@ -170,10 +184,10 @@ class VersionManager:
         self.current_version = "2.0"
         self.supported_versions = ["1.0", "2.0"]
         self.deprecated_versions = ["1.0"]
-    
+
     def is_supported(self, version: str) -> bool:
         return version in self.supported_versions
-    
+
     def is_deprecated(self, version: str) -> bool:
         return version in self.deprecated_versions
 ```
@@ -181,10 +195,11 @@ class VersionManager:
 ## AI Service Integration
 
 Modular AI service integration supporting multiple providers:
-- Provider-agnostic interface
-- Response validation
-- Error handling
-- Request/response logging
+
+-   Provider-agnostic interface
+-   Response validation
+-   Error handling
+-   Request/response logging
 
 ```python
 # app/core/ai/base.py
@@ -206,6 +221,7 @@ class OpenAIProvider(AIProvider):
 ### Request Validation
 
 All requests are validated using Pydantic models:
+
 ```python
 # app/models/requests/user.py
 class UserCreateRequest(BaseModel):
@@ -217,6 +233,7 @@ class UserCreateRequest(BaseModel):
 ### Response Format
 
 Standardized response format:
+
 ```python
 # app/core/responses.py
 class APIResponse(BaseModel):
@@ -229,6 +246,7 @@ class APIResponse(BaseModel):
 ### Error Handling
 
 Centralized error handling:
+
 ```python
 # app/core/exceptions.py
 class APIError(Exception):
@@ -240,7 +258,7 @@ class APIError(Exception):
 
 You're right - more descriptive error codes are better practice. Here's an updated version of the error handling section for the architecture README:
 
-```markdown:docs/architecture/README.md
+````markdown:docs/architecture/README.md
 ### Error Handling
 
 We use semantic error codes that combine a domain prefix with a descriptive error type:
@@ -250,7 +268,7 @@ We use semantic error codes that combine a domain prefix with a descriptive erro
 class APIError(Exception):
     """Base API error class"""
     def __init__(
-        self, 
+        self,
         message: str,
         code: str = None,
         status: int = 400,
@@ -260,7 +278,7 @@ class APIError(Exception):
         self.code = code
         self.status = status
         self.details = details or {}
-```
+````
 
 ### Example error codes and their meanings:
 
@@ -271,32 +289,32 @@ ERROR_CODES = {
     'AUTH_TOKEN_EXPIRED': 'Authentication token has expired',
     'AUTH_TOKEN_INVALID': 'Invalid authentication token',
     'AUTH_INSUFFICIENT_PERMISSIONS': 'User lacks required permissions',
-    
+
     # Validation errors (VAL_*)
     'VAL_MISSING_FIELD': 'Required field is missing',
     'VAL_INVALID_FORMAT': 'Field format is invalid',
     'VAL_CONSTRAINT_VIOLATION': 'Field value violates constraints',
-    
+
     # Resource errors (RES_*)
     'RES_NOT_FOUND': 'Requested resource not found',
     'RES_ALREADY_EXISTS': 'Resource already exists',
     'RES_CONFLICT': 'Resource state conflict',
-    
+
     # AI Service errors (AI_*)
     'AI_PROVIDER_ERROR': 'AI provider returned an error',
     'AI_INVALID_RESPONSE': 'AI response failed validation',
     'AI_CONTENT_POLICY': 'Content policy violation',
     'AI_TOKEN_LIMIT': 'Token limit exceeded',
-    
+
     # Rate limiting errors (RATE_*)
     'RATE_LIMIT_EXCEEDED': 'Rate limit exceeded for this endpoint',
     'RATE_INVALID_CONFIG': 'Invalid rate limit configuration',
-    
+
     # Database errors (DB_*)
     'DB_CONNECTION_ERROR': 'Database connection failed',
     'DB_CONSTRAINT_ERROR': 'Database constraint violation',
     'DB_TRANSACTION_ERROR': 'Transaction failed',
-    
+
     # System errors (SYS_*)
     'SYS_INTERNAL_ERROR': 'Internal server error',
     'SYS_SERVICE_UNAVAILABLE': 'Service temporarily unavailable',
@@ -305,27 +323,39 @@ ERROR_CODES = {
 ```
 
 Example error response:
-```json
+
+```
 {
     "success": false,
+    "message": "Validation failed for RegisterRequest",
     "error": {
-        "code": "AUTH_INVALID_CREDENTIALS",
-        "message": "Invalid username or password provided",
+        "code": "VALIDATION_ERROR",
+        "errors": [
+            {
+                "field": "password",
+                "message": "Field required",
+                "type": "value_error.missing"
+            }
+        ],
+        "required_fields": ["password"],
         "details": {
-            "field": "password",
-            "reason": "incorrect_password",
-            "attempts_remaining": 2
+            "total_errors": 1,
+            "schema": "RegisterRequest",
+            "validation_context": "request_payload"
         }
-    }
+    },
+    "data": null,
+    "warnings": []
 }
 ```
 
 Benefits of this approach:
-- Self-documenting error codes
-- Domain-specific error grouping
-- Consistent error handling
-- Detailed error context
-- Easy error tracking and analytics
+
+-   Self-documenting error codes
+-   Domain-specific error grouping
+-   Consistent error handling
+-   Detailed error context
+-   Easy error tracking and analytics
 
 ## Directory Structure
 
@@ -365,19 +395,20 @@ graph TD
 ## Scaling Considerations
 
 The architecture supports horizontal scaling through:
-- Stateless application design
-- Redis for shared state
-- Database connection pooling
-- Docker containerization
+
+-   Stateless application design
+-   Redis for shared state
+-   Database connection pooling
+-   Docker containerization
 
 ## Next Steps
 
-- [API Documentation](../api/README.md)
-- [Development Guide](../development/README.md)
-- [Deployment Guide](../deployment/README.md)
+-   [API Documentation](../api/README.md)
+-   [Development Guide](../development/README.md)
+-   [Deployment Guide](../deployment/README.md)
 
 ## Related Resources
 
-- [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [Redis Documentation](https://redis.io/docs/)
+-   [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
+-   [Flask Documentation](https://flask.palletsprojects.com/)
+-   [Redis Documentation](https://redis.io/docs/)
