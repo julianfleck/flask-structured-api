@@ -127,7 +127,9 @@ AI_API_KEY=your-api-key-here
    }
    ```
 
-2. Create an API token:
+2. Authentication Options:
+
+   a. Create an API token (for development/testing):
    ```bash
    # Docker
    docker-compose exec api flask tokens create-token
@@ -136,12 +138,28 @@ AI_API_KEY=your-api-key-here
    flask tokens create-token
    ```
 
+   b. Create an API key (for production use):
+   ```bash
+   # First, login to get an access token
+   curl -X POST http://localhost:5000/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email": "admin@example.com", "password": "your_password"}'
+
+   # Then create an API key using the access token
+   curl -X POST http://localhost:5000/api/v1/auth/api-keys \
+     -H "Authorization: Bearer your_access_token" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Production API", "scopes": ["read:items"]}'
+   ```
+
+   Save the returned API key securely - it won't be shown again!
+
 ## Your First Endpoint
 
 1. Create a new file `app/api/v1/endpoints/hello.py`:
    ```python
    from flask import Blueprint
-   from app.core.responses import SuccessResponse
+   from app.models.responses import SuccessResponse
    from app.core.auth import require_auth
 
    hello_bp = Blueprint('hello', __name__)
@@ -166,9 +184,13 @@ AI_API_KEY=your-api-key-here
 
 3. Test your endpoint:
    ```bash
+   # Using JWT token
    curl -H "Authorization: Bearer your-token" http://localhost:5000/api/v1/hello
-   ```
 
+   # Using API key
+   curl -H "X-API-Key: your-api-key" http://localhost:5000/api/v1/hello
+   ```
+   
 ## Next Steps
 
 - [Explore the Architecture](../architecture/README.md)
