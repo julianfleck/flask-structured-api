@@ -1,4 +1,4 @@
-from flask import Flask, request, current_app
+from flask import Flask, request, current_app, Response, make_response
 from werkzeug.exceptions import HTTPException, BadRequest, Unauthorized, Forbidden, NotFound
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from jwt.exceptions import PyJWTError
@@ -60,29 +60,82 @@ def register_error_handlers(app: Flask):
         ).dict(), 500
 
     @app.errorhandler(APIError)
-    def handle_api_error(error):
-        return ErrorResponse(
-            message=error.message,
-            error=ErrorDetail(
+    def handle_api_error(error: APIError) -> Response:
+        if isinstance(error, HTTPException):
+            error_detail = HTTPErrorDetail(
+                code=error.code,
+                status=error.code,
+                method=error.get_response().status,
+                path=error.description
+            )
+        else:
+            error_detail = ErrorDetail(
                 code=error.code,
                 details=error.details
-            ),
-            status=error.status_code
-        ).dict(), error.status_code
+            )
+
+        response = ErrorResponse(
+            success=False,
+            error=error_detail,
+            message=error.message
+        )
+
+        return make_response(response.model_dump(), getattr(error, 'status_code', 400))
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(error):
-        return ErrorResponse(
-            message="Validation error",
-            error=ValidationErrorDetail(
-                code="VALIDATION_ERROR",
-                errors=[
-                    ValidationErrorItem(
-                        field=e["loc"][-1],
-                        message=e["msg"],
-                        type=e["type"]
-                    ) for e in error.errors()
-                ]
-            ).dict(),
+        validation_errors = []
+
+        # Get the model name from the error context
+        model_name = None
+        if hasattr(error, 'model'):
+            model_name = error.model.__name__
+        elif hasattr(error, '_model'):
+            model_name = error._model.__name__
+        elif hasattr(error, 'raw_errors') and error.raw_errors:  # Pydantic v2
+            model_ctx = getattr(error.raw_errors[0], 'loc', None)
+            if model_ctx:
+                model_name = model_ctx[0]
+
+        # Extract validation errors
+        raw_errors = error.errors() if hasattr(error, 'errors') else [
+            {'loc': ['unknown'], 'msg': str(error), 'type': 'validation_error'}]
+
+        for e in raw_errors:
+            field_path = " -> ".join(str(loc) for loc in e["loc"])
+            validation_errors.append(
+                ValidationErrorItem(
+                    field=field_path,
+                    message=e["msg"],
+                    type=e["type"]
+                )
+            )
+
+        # Get required fields from validation errors
+        required_fields = [
+            e.field for e in validation_errors
+            if e.type == "value_error.missing"
+        ]
+
+        error_detail = ValidationErrorDetail(
+            code="VALIDATION_ERROR",
+            errors=validation_errors,
+            required_fields=required_fields,
+            details={
+                "total_errors": len(validation_errors),
+                "schema": model_name,
+                "validation_context": "request_payload",
+                "validation_errors": [e.model_dump() for e in validation_errors]
+            }
+        )
+
+        model_str = model_name or 'request'
+        message = f"Validation failed for {model_str}"
+
+        response = ErrorResponse(
+            message=message,
+            error=error_detail,
             status=422
-        ).dict(), 422
+        )
+
+        return response.model_dump(), 422

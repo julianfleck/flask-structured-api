@@ -17,7 +17,10 @@ class ValidationErrorItem(BaseModel):
 
 class ValidationErrorDetail(ErrorDetail):
     """Validation error details"""
+    code: str
     errors: List[ValidationErrorItem]
+    details: Optional[Dict[str, Any]] = None
+    required_fields: Optional[List[str]] = None
 
 
 class HTTPErrorDetail(ErrorDetail):
