@@ -1,10 +1,12 @@
 from typing import Optional
 from sqlmodel import Session, select
 import jwt
+from datetime import datetime
 
 from app.core.auth import Auth
 from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
-from app.models.core.auth import User, UserRole
+from app.models.user import User
+from app.models.enums import UserRole
 from app.models.requests.auth import RegisterRequest, LoginRequest
 from app.models.responses.auth import TokenResponse, UserResponse
 from app.core.config import settings
@@ -43,7 +45,7 @@ class AuthService:
         return UserResponse.from_orm(user)
 
     def login(self, request: LoginRequest) -> TokenResponse:
-        """Authenticate user and return tokens"""
+        """Authenticate user and update login statistics"""
         user = self.get_user_by_email(request.email)
 
         if not user or not Auth.verify_password(request.password, user.hashed_password):
@@ -54,6 +56,11 @@ class AuthService:
                 message="User account is disabled",
                 code="AUTH_ACCOUNT_DISABLED"
             )
+
+        # Update login statistics
+        user.last_login_at = datetime.utcnow()
+        user.login_count += 1
+        self.db.commit()
 
         return Auth.create_tokens(user.id)
 
