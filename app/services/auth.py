@@ -1,7 +1,8 @@
 from typing import Optional
 from sqlmodel import Session, select
 import jwt
-from datetime import datetime
+from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
 from app.models.user import User
