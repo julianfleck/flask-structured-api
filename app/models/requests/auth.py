@@ -1,6 +1,7 @@
 # app/models/requests/auth.py
 from pydantic import EmailStr, Field
 from app.models.core.base import BaseRequestModel
+from typing import List, Optional
 
 
 class RegisterRequest(BaseRequestModel):
@@ -19,3 +20,10 @@ class LoginRequest(BaseRequestModel):
 class RefreshTokenRequest(BaseRequestModel):
     """Refresh token request"""
     refresh_token: str
+
+
+class APIKeyRequest(BaseRequestModel):
+    """API key creation request"""
+    name: str = Field(..., min_length=1, max_length=100)
+    scopes: List[str] = Field(default_factory=list)
+    expires_in_days: Optional[int] = None  # Optional expiration

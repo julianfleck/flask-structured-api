@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     BACKUP_KEEP_MONTHS: int = 6
     BACKUP_COMPRESSION: bool = True
 
+    # API Key Settings
+    MAX_API_KEYS_PER_USER: int = 5
+    API_KEY_PREFIX: str = "sk_"  # For identifying API keys
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

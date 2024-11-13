@@ -1,16 +1,19 @@
-from typing import Optional
+from typing import Optional, List
 from sqlmodel import Session, select
 import jwt
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
+import hashlib
 
 from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
 from app.models.user import User
 from app.models.enums import UserRole
-from app.models.requests.auth import RegisterRequest, LoginRequest
+from app.models.requests.auth import RegisterRequest, LoginRequest, APIKeyRequest
 from app.models.responses.auth import TokenResponse, UserResponse
 from app.core.config import settings
 from app.core.exceptions import APIError
+from app.models.api_key import APIKey
 
 
 class Auth:
@@ -134,7 +137,7 @@ class AuthService:
         """Refresh access token using refresh token"""
         try:
             # Decode and validate refresh token
-            payload = Auth.decode_token(refresh_token)
+            payload = Auth.decode_token(refresh_token, refresh=True)
 
             # Verify it's a refresh token
             if payload.get('type') != 'refresh':
@@ -155,7 +158,11 @@ class AuthService:
                 )
 
             # Create new access token
-            access_token = Auth.create_token(user_id)
+            access_token = Auth._create_token(
+                user_id,
+                settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+                settings.JWT_SECRET_KEY
+            )
 
             return TokenResponse(
                 access_token=access_token,
@@ -204,3 +211,57 @@ class AuthService:
                 code="AUTH_INVALID_TOKEN",
                 status_code=401
             )
+
+    def get_user_api_keys(self, user_id: int) -> List[APIKey]:
+        """Get all active API keys for a user"""
+        return self.db.query(APIKey).filter(
+            APIKey.user_id == user_id,
+            APIKey.is_active == True
+        ).all()
+
+    def create_api_key(self, user_id: int, name: str, scopes: List[str] = None) -> str:
+        # Check maximum number of keys per user (optional)
+        existing_keys = self.db.query(APIKey).filter(
+            APIKey.user_id == user_id,
+            APIKey.is_active == True
+        ).count()
+
+        if existing_keys >= settings.MAX_API_KEYS_PER_USER:
+            raise APIError(
+                message="Maximum number of API keys reached",
+                code="AUTH_MAX_KEYS_REACHED",
+                status_code=400
+            )
+
+        # Generate a secure random key
+        raw_key = f"sk_{secrets.token_urlsafe(32)}"
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+
+        api_key = APIKey(
+            key_hash=key_hash,
+            user_id=user_id,
+            name=name,
+            scopes=scopes or []
+        )
+        self.db.add(api_key)
+        self.db.commit()
+
+        return raw_key
+
+    def revoke_api_key(self, key_id: int, user_id: int):
+        """Revoke an API key"""
+        api_key = self.db.query(APIKey).filter(
+            APIKey.id == key_id,
+            APIKey.user_id == user_id,  # Ensure user owns this key
+            APIKey.is_active == True
+        ).first()
+
+        if not api_key:
+            raise APIError(
+                message="API key not found",
+                code="AUTH_KEY_NOT_FOUND",
+                status_code=404
+            )
+
+        api_key.is_active = False
+        self.db.commit()
