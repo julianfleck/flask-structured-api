@@ -57,13 +57,13 @@ class Auth:
             raise APIError(
                 message="Token has expired",
                 code="AUTH_TOKEN_EXPIRED",
-                status=401
+                status_code=401
             )
         except jwt.InvalidTokenError:
             raise APIError(
                 message="Invalid token",
                 code="AUTH_TOKEN_INVALID",
-                status=401
+                status_code=401
             )
 
     @staticmethod
