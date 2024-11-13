@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Union, List
+from typing import Union, List, TYPE_CHECKING
 from functools import wraps
 import jwt
 from flask import request, g
@@ -11,6 +11,9 @@ from app.core.config import settings
 from app.models.enums import UserRole
 from app.core.db import get_session
 from app.services.auth import AuthService, Auth
+
+if TYPE_CHECKING:
+    from app.models.user import User  # Import User model for type checking only
 
 
 def has_required_roles(user: 'User', required_roles: Union[List[str], str]) -> bool:
