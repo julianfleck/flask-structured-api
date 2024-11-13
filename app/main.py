@@ -4,6 +4,19 @@ from app.core.config import settings
 import os
 import socket
 from app.core.handlers import register_error_handlers
+from app.api.v1 import api_v1
+from app.models import (
+    User,
+    APIKey,
+    Item,
+    CoreModel,
+    BaseRequestModel,
+    BaseResponseModel,
+    BaseAIValidationModel,
+    UserRole,
+    WarningCode,
+    WarningSeverity
+)
 
 
 def is_port_in_use(port: int) -> bool:
@@ -70,7 +83,6 @@ def create_app() -> Flask:
     # Register blueprints
     from app.api.root import root_bp
     app.register_blueprint(root_bp)
-    from app.api.v1 import api_v1
     app.register_blueprint(api_v1)
 
     return app

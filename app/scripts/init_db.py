@@ -2,7 +2,7 @@ from flask import Flask
 from app.main import create_app
 from flask_migrate import upgrade, init, migrate
 import time
-from app.core.db import check_database_connection
+from app.core.db import check_database_connection, SQLModel, engine
 import os
 
 
@@ -29,6 +29,10 @@ def init_db():
             return False
 
         try:
+            # Create tables directly first
+            SQLModel.metadata.create_all(bind=engine)
+            print("✅ Tables created")
+
             # Initialize migrations if they don't exist
             if not os.path.exists("migrations"):
                 init()

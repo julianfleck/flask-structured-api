@@ -19,15 +19,14 @@ engine = create_engine(
 def init_migrations(app: Flask) -> None:
     """Initialize database migrations"""
     # Import all models to register them with SQLModel
-    from app.models.enums import UserRole
-    from app.models.core.base import CoreModel
-
-    # Create tables directly first time
-    SQLModel.metadata.create_all(engine)
+    from app.models import User, APIKey, Item, CoreModel
 
     # Create a SQLAlchemy database instance for Flask-Migrate
     db = SQLAlchemy(app)
     db.Model = SQLModel
+
+    # Create tables directly first time
+    SQLModel.metadata.create_all(bind=engine)
 
     # Initialize Flask-Migrate with the SQLAlchemy instance
     migrate = Migrate(app, db)
