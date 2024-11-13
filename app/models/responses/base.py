@@ -1,5 +1,6 @@
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel
+from app.models.errors import ErrorDetail
 
 
 class APIResponse(BaseModel):
@@ -15,14 +16,7 @@ class SuccessResponse(APIResponse):
     success: bool = True
 
 
-class ErrorDetail(BaseModel):
-    """Error details model for API error responses"""
-    code: str
-    details: Optional[Dict[str, Any]] = None
-
-
 class ErrorResponse(APIResponse):
     """Error response model for API errors"""
     success: bool = False
-    error: Dict[str, Any]
-    status: int
+    error: ErrorDetail
