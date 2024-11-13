@@ -265,3 +265,33 @@ class AuthService:
 
         api_key.is_active = False
         self.db.commit()
+
+    def validate_api_key(self, raw_key: str) -> User:
+        """Validate API key and return associated user"""
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+
+        api_key = self.db.query(APIKey).filter(
+            APIKey.key_hash == key_hash,
+            APIKey.is_active == True
+        ).first()
+
+        if not api_key:
+            raise APIError(
+                message="Invalid API key",
+                code="AUTH_INVALID_API_KEY",
+                status_code=401
+            )
+
+        # Check expiration if set
+        if api_key.expires_at and api_key.expires_at < datetime.utcnow():
+            raise APIError(
+                message="API key has expired",
+                code="AUTH_API_KEY_EXPIRED",
+                status_code=401
+            )
+
+        # Update last used timestamp
+        api_key.last_used_at = datetime.utcnow()
+        self.db.commit()
+
+        return self.get_user_by_id(api_key.user_id)

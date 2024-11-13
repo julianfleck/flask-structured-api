@@ -54,45 +54,56 @@ def require_auth(f):
     """Decorator to require authentication"""
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Check Authorization header first
         auth_header = request.headers.get('Authorization')
-        logger.debug(f"Auth header: {auth_header!r}")
-        if not auth_header:
-            raise APIError(
-                message="Missing authorization header",
-                code="AUTH_MISSING_TOKEN",
-                status_code=401
-            )
+        if auth_header:
+            try:
+                token_type, token = auth_header.split(' ', 1)
+                token_type = token_type.lower()
 
-        try:
-            # Only split the header - specific ValueError case
-            token_type, token = auth_header.split(' ', 1)
-            logger.debug(f"Token type: {token_type!r}, Token: {token[:10]}...")
-            if token_type.lower() != 'bearer':
-                raise APIError(
-                    message="Invalid token type",
-                    code="AUTH_INVALID_TOKEN_TYPE",
-                    status_code=401
-                )
+                db = next(get_session())
+                auth_service = AuthService(db)
 
+                if token_type == 'bearer':
+                    user = auth_service.validate_token(token)
+                elif token_type == 'apikey':
+                    user = auth_service.validate_api_key(token)
+                else:
+                    raise APIError(
+                        message="Invalid token type",
+                        code="AUTH_INVALID_TOKEN_TYPE",
+                        status_code=401
+                    )
+
+                g.user = user
+                g.user_id = user.id
+                return f(*args, **kwargs)
+
+            except ValueError as e:
+                if "split" in str(e):
+                    logger.error(f"Header parsing error: {str(e)}")
+                    raise APIError(
+                        message="Invalid authorization header format",
+                        code="AUTH_INVALID_HEADER",
+                        status_code=401
+                    )
+                raise
+
+        # Fallback to X-API-Key header
+        api_key = request.headers.get('X-API-Key')
+        if api_key:
             db = next(get_session())
             auth_service = AuthService(db)
-            user = auth_service.validate_token(token)
-
+            user = auth_service.validate_api_key(api_key)
             g.user = user
             g.user_id = user.id
-
-            # Let other exceptions propagate normally
             return f(*args, **kwargs)
 
-        except ValueError as e:
-            if "split" in str(e):  # Only catch header splitting errors
-                logger.error(f"Header parsing error: {str(e)}")
-                raise APIError(
-                    message="Invalid authorization header format",
-                    code="AUTH_INVALID_HEADER",
-                    status_code=401
-                )
-            raise  # Let other ValueErrors propagate
+        raise APIError(
+            message="Missing authorization header",
+            code="AUTH_MISSING_TOKEN",
+            status_code=401
+        )
 
     return decorated
 
@@ -107,15 +118,21 @@ def optional_auth(f):
 
         try:
             token_type, token = auth_header.split()
-            if token_type.lower() != 'bearer':
-                return f(*args, **kwargs)
+            token_type = token_type.lower()
 
             db = next(get_session())
             auth_service = AuthService(db)
-            user = auth_service.validate_token(token)
+
+            if token_type == 'bearer':
+                user = auth_service.validate_token(token)
+            elif token_type == 'apikey':
+                user = auth_service.validate_api_key(token)
+            else:
+                return f(*args, **kwargs)
 
             g.user = user
             g.user_id = user.id
+            g.api_key = token if token_type == 'apikey' else None
 
         except (ValueError, jwt.PyJWTError):
             pass  # Silently fail on auth errors
