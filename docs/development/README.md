@@ -142,22 +142,109 @@ Access the documentation at `/docs` or `/redoc` when running the API.
 
 ## Development Tools
 
+Here's the updated CLI commands section for `docs/development/README.md`:
+
 ### CLI Commands
 
+The API provides CLI commands for common management tasks:
 
-```121:131:docs/README.md
-# Development
-flask run --debug
+```bash
+# Authentication
+flask tokens create --email user@example.com --expires 60  # Create JWT token
+flask api-keys create --email user@example.com --name "API" # Create API key
+flask api-keys list --email user@example.com              # List API keys
+flask api-keys revoke --email user@example.com --key-id 1 # Revoke API key
+
+# User Management
+flask users create-admin  # Create admin user
 
 # Database
-flask db upgrade
-
-# Create admin user
-flask users create-admin
-
-# Docker
-docker-compose up -d
+flask db upgrade         # Run migrations
+flask db downgrade      # Rollback migration
+flask db revision --autogenerate -m "description"  # Create migration
 ```
+
+For detailed usage of any command:
+```bash
+flask <command> --help
+```
+
+Example outputs:
+
+```bash
+# Creating a JWT token
+$ flask tokens create --email admin@example.com
+Access Token (expires in 60 minutes):
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+
+Refresh Token:
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+
+# Creating an API key
+$ flask api-keys create --email admin@example.com --name "Production API"
+API Key (save this, it won't be shown again):
+sk_live_abc123...
+
+# Listing API keys
+$ flask api-keys list --email admin@example.com
+ID: 1
+Name: Production API
+Created: 2024-03-15 10:30:00
+Last used: 2024-03-15 12:45:00
+Expires: Never
+Active: True
+Scopes: read:items, write:items
+```
+
+## Creating CLI Commands
+
+The API uses Click to create CLI commands. Here's how to add your own commands:
+
+1. Create a new file in `app/cli/your_commands.py`:
+
+```python
+import click
+from flask.cli import AppGroup
+
+# Create a command group
+your_cli = AppGroup('your-group', help='Description of your commands')
+
+# Add a command to the group
+@your_cli.command('command-name')
+@click.option('--required-arg', prompt=True, help='Argument description')
+@click.option('--optional-arg', default='default', help='Optional argument') 
+def your_command(required_arg: str, optional_arg: str):
+    """Command description shown in --help"""
+    # Your command logic here
+    click.echo(f"Doing something with {required_arg}")
+```
+
+2. Register your commands in `app/cli/__init__.py`:
+
+```python
+from flask import Flask
+from app.cli.your_commands import your_cli
+
+def init_cli(app: Flask):
+    app.cli.add_command(your_cli)
+```
+
+3. Use your command:
+
+```bash
+# Show help
+flask your-group --help
+
+# Run command
+flask your-group command-name --required-arg value
+```
+
+Key points:
+- Use `AppGroup` to group related commands
+- Add `@click.option()` for command arguments
+- Provide help text for commands and options
+- Use `click.echo()` for output
+- Register commands in `init_cli()`
 
 
 ### Debugging

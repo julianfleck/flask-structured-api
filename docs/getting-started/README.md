@@ -127,32 +127,42 @@ AI_API_KEY=your-api-key-here
    }
    ```
 
-2. Authentication Options:
+## Authentication Options
 
-   a. Create an API token (for development/testing):
+1. Using CLI Tools (recommended for development):
    ```bash
-   # Docker
-   docker-compose exec api flask tokens create-token
-   
-   # Local
-   flask tokens create-token
+   # Create JWT token
+   flask tokens create --email user@example.com --expires 60
+
+   # Create API key
+   flask api-keys create --email user@example.com --name "Dev API" --expires 30
+
+   # List and manage API keys
+   flask api-keys list --email user@example.com
+   flask api-keys revoke --email user@example.com --key-id 123
    ```
 
-   b. Create an API key (for production use):
+2. Using HTTP Endpoints:
    ```bash
-   # First, login to get an access token
+   # Login to get JWT tokens
    curl -X POST http://localhost:5000/api/v1/auth/login \
      -H "Content-Type: application/json" \
-     -d '{"email": "admin@example.com", "password": "your_password"}'
+     -d '{
+       "email": "user@example.com",
+       "password": "your_password"
+     }'
 
-   # Then create an API key using the access token
+   # Create API key using JWT token
    curl -X POST http://localhost:5000/api/v1/auth/api-keys \
      -H "Authorization: Bearer your_access_token" \
      -H "Content-Type: application/json" \
-     -d '{"name": "Production API", "scopes": ["read:items"]}'
+     -d '{
+       "name": "Production API",
+       "scopes": ["read:items", "write:items"]
+     }'
    ```
 
-   Save the returned API key securely - it won't be shown again!
+   Save any returned tokens or API keys securely - they won't be shown again!
 
 ## Your First Endpoint
 
