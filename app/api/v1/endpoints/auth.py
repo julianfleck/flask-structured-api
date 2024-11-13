@@ -92,13 +92,14 @@ def list_api_keys():
     keys = auth_service.get_user_api_keys(g.user_id)
     return SuccessResponse(
         message="API keys retrieved",
-        data=[{
-            'id': key.id,
-            'name': key.name,
-            'last_used_at': key.last_used_at,
-            'created_at': key.created_at,
-            # Don't expose the actual key hash
-        } for key in keys]
+        data={
+            'items': [{
+                'id': key.id,
+                'name': key.name,
+                'last_used_at': key.last_used_at,
+                'created_at': key.created_at,
+            } for key in keys]
+        }
     ).dict()
 
 

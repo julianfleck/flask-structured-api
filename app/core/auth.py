@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import Union, List, TYPE_CHECKING
 from functools import wraps
 import jwt
+import logging
 from flask import request, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -11,6 +12,8 @@ from app.core.config import settings
 from app.models.enums import UserRole
 from app.core.db import get_session
 from app.services.auth import AuthService, Auth
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from app.models.user import User  # Import User model for type checking only
@@ -52,6 +55,7 @@ def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
+        logger.debug(f"Auth header: {auth_header!r}")
         if not auth_header:
             raise APIError(
                 message="Missing authorization header",
@@ -60,7 +64,9 @@ def require_auth(f):
             )
 
         try:
-            token_type, token = auth_header.split()
+            # Only split the header - specific ValueError case
+            token_type, token = auth_header.split(' ', 1)
+            logger.debug(f"Token type: {token_type!r}, Token: {token[:10]}...")
             if token_type.lower() != 'bearer':
                 raise APIError(
                     message="Invalid token type",
@@ -74,14 +80,19 @@ def require_auth(f):
 
             g.user = user
             g.user_id = user.id
+
+            # Let other exceptions propagate normally
             return f(*args, **kwargs)
 
-        except ValueError:
-            raise APIError(
-                message="Invalid authorization header format",
-                code="AUTH_INVALID_HEADER",
-                status_code=401
-            )
+        except ValueError as e:
+            if "split" in str(e):  # Only catch header splitting errors
+                logger.error(f"Header parsing error: {str(e)}")
+                raise APIError(
+                    message="Invalid authorization header format",
+                    code="AUTH_INVALID_HEADER",
+                    status_code=401
+                )
+            raise  # Let other ValueErrors propagate
 
     return decorated
 
