@@ -1,6 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from sqlmodel import SQLModel, Field
+from pydantic import root_validator
+from app.core.warnings import WarningCollector
+from app.models.enums import WarningCode, WarningSeverity
 
 
 class CoreModel(SQLModel):
@@ -17,8 +20,28 @@ class CoreModel(SQLModel):
 
 class BaseRequestModel(SQLModel):
     """Base model for API requests"""
+
+    @root_validator(pre=True)
+    def check_extra_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Collect extra fields as warnings instead of rejecting them"""
+        model_fields = cls.__fields__.keys()
+        extra_fields = [k for k in values.keys() if k not in model_fields]
+
+        if extra_fields:
+            warning_collector = WarningCollector()
+            # Create a separate warning for each extra field
+            for field in extra_fields:
+                warning_collector.add_warning(
+                    message="Unexpected field in request: {}".format(field),
+                    code=WarningCode.UNEXPECTED_PARAM,
+                    severity=WarningSeverity.LOW
+                )
+                values.pop(field)
+
+        return values
+
     class Config:
-        extra = "forbid"  # Prevent additional properties
+        extra = "allow"  # Allow extra fields to reach our validator
 
 
 class BaseResponseModel(SQLModel):

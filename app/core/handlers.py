@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from app.models.responses import ErrorResponse
 from app.models.errors import HTTPErrorDetail, DatabaseErrorDetail, ValidationErrorItem, ValidationErrorDetail, ErrorDetail
 from app.core.exceptions import APIError
+from app.core.warnings import WarningCollector
 
 
 def register_error_handlers(app: Flask):
@@ -74,11 +75,22 @@ def register_error_handlers(app: Flask):
                 details=error.details
             )
 
+        # Get any collected warnings
+        warning_collector = WarningCollector()
+        warnings = [
+            f"{w.code}: {w.message} (Severity: {w.severity})"
+            for w in warning_collector.get_warnings()
+        ]
+
         response = ErrorResponse(
             success=False,
             error=error_detail,
-            message=error.message
+            message=error.message,
+            warnings=warnings  # Include warnings in response
         )
+
+        # Clear warnings after adding them to response
+        warning_collector.clear_warnings()
 
         return make_response(response.model_dump(), getattr(error, 'status_code', 400))
 

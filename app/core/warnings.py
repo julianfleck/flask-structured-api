@@ -1,37 +1,41 @@
 # app/core/warnings.py
 from dataclasses import dataclass, field
-from typing import List, Dict, ClassVar
+from typing import List
 from datetime import datetime
+from app.models.enums import WarningCode, WarningSeverity
 
 
 @dataclass
 class Warning:
     """Warning message structure"""
     message: str
-    code: str
+    code: WarningCode
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    severity: str = "warning"
-
-    # Standard warning codes
-    CODES: ClassVar[Dict[str, str]] = {
-        "low_confidence": "AI model confidence below threshold",
-        "high_token_usage": "High token usage detected",
-        "validation_warning": "Non-critical validation issue",
-        "rate_limit_warning": "Approaching rate limit",
-        "performance_warning": "Performance degradation detected"
-    }
+    severity: WarningSeverity = WarningSeverity.MEDIUM
 
 
 class WarningCollector:
     """Warning collection utility"""
+    _instance = None
 
-    def __init__(self):
-        self.warnings: List[Warning] = []
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.warnings = []
+        return cls._instance
 
-    def add_warning(self, message: str, code: str):
+    def add_warning(self, message: str, code: WarningCode, severity: WarningSeverity = WarningSeverity.MEDIUM):
         """Add new warning"""
-        self.warnings.append(Warning(message=message, code=code))
+        self.warnings.append(Warning(
+            message=message,
+            code=code,
+            severity=severity
+        ))
 
     def get_warnings(self) -> List[Warning]:
         """Get collected warnings"""
         return self.warnings
+
+    def clear_warnings(self):
+        """Clear all warnings"""
+        self.warnings = []
