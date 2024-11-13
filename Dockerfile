@@ -1,9 +1,10 @@
-FROM python:3.11-slim
+# Base image with common dependencies
+FROM python:3.11-slim as base
 
 # Add build argument for environment
 ARG ENVIRONMENT=production
 
-# Install required packages
+# Install common required packages
 RUN apt-get update && apt-get install -y \
     postgresql-client \
     cron \
@@ -15,39 +16,49 @@ WORKDIR /app
 # Copy requirements first
 COPY requirements.txt requirements-dev.txt ./
 
-# Install dependencies and show what's being installed
-RUN pip install --no-cache-dir -r requirements.txt && \
-    if [ "$ENVIRONMENT" = "development" ] ; then \
+# Install base dependencies
+RUN pip install -r requirements.txt
+
+# Development dependencies if needed
+RUN if [ "$ENVIRONMENT" = "development" ] ; then \
         echo "🔧 Installing development dependencies..." && \
-        pip install --no-cache-dir -r requirements-dev.txt && \
-        pip list | grep debugpy || echo "❌ debugpy not found!" ; \
+        pip install -r requirements-dev.txt ; \
     fi
 
-# Copy source code and setup files
+# API image
+FROM base as api
 COPY . .
 RUN pip install -e .
 
-# Verify debugpy installation after everything is set up
+# Setup directories and permissions
+RUN mkdir -p /var/log && \
+    touch /var/log/flask.log /var/log/flask.err.log && \
+    chmod -R 755 /var/log && \
+    mkdir -p /etc/supervisor/conf.d && \
+    cp /app/docker/supervisord.conf /etc/supervisor/conf.d/
+
+# Verify debugpy installation for development
 RUN if [ "$ENVIRONMENT" = "development" ] ; then \
         echo "🔍 Verifying debugpy installation..." && \
         pip list | grep debugpy || echo "❌ debugpy not found!" ; \
     fi
 
-# Setup directories and permissions
-RUN mkdir -p /var/log /backups \
-    && touch /var/log/cron.log /var/log/flask.log /var/log/flask.err.log \
-    && chmod -R 755 /var/log /backups \
-    && mkdir -p /etc/supervisor/conf.d \
-    && cp /app/docker/supervisord.conf /etc/supervisor/conf.d/
+COPY docker/entrypoint.sh /app/docker/
+RUN chmod +x /app/docker/entrypoint.sh
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
 
-# Create crontab directory with proper permissions
-RUN mkdir -p /etc/crontabs \
-    && chmod -R 755 /etc/crontabs
+# Backup image
+FROM base as backup
+# Only copy what's needed for backups
+COPY app/scripts/backup_db.py /app/app/scripts/
+COPY app/core/config.py /app/app/core/
+COPY docker/crontab /app/docker/
 
-# Set entrypoint permissions and make doubly sure it's executable
-RUN chmod +x /app/docker/entrypoint.sh && \
-    ls -l /app/docker/entrypoint.sh && \
-    test -x /app/docker/entrypoint.sh
+# Setup backup directories
+RUN mkdir -p /backups /var/log && \
+    touch /var/log/cron.log && \
+    chmod -R 755 /backups /var/log
 
-# Use shell form of ENTRYPOINT to ensure proper execution
-ENTRYPOINT exec /app/docker/entrypoint.sh
+COPY docker/entrypoint.backup.sh /app/docker/
+RUN chmod +x /app/docker/entrypoint.backup.sh
+ENTRYPOINT ["/app/docker/entrypoint.backup.sh"]

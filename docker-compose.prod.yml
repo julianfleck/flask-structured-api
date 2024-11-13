@@ -9,6 +9,7 @@ services:
       - .env.prod
     depends_on:
       - db
+      - redis
     command: gunicorn --workers ${GUNICORN_WORKERS:-4} --bind ${API_HOST}:${API_PORT} "app.main:create_app()"
 
   db:
@@ -38,6 +39,18 @@ services:
     depends_on:
       - db
 
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
-  backup_data: 
+  backup_data:
+  redis_data: 

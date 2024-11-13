@@ -1,1 +1,7 @@
+POSTGRES_HOST=db
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=api
+PYTHONPATH=/app
+
 0 0 * * * python -m app.scripts.backup_db >> /var/log/cron.log 2>&1 

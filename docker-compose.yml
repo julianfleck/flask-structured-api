@@ -2,7 +2,11 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: api
+      args:
+        ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
       - "${API_PORT}:${API_PORT}"
       - "${DEBUGPY_PORT}:${DEBUGPY_PORT}"
@@ -16,6 +20,11 @@ services:
     volumes:
       - .:/app
     entrypoint: ["/app/docker/entrypoint.sh"]
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app_network
 
   db:
     image: postgres:14-alpine
@@ -28,29 +37,52 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d api"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U user -d api"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
   backup:
-    build: .
+    build:
+      context: .
+      target: backup
     volumes:
       - backup_data:/backups
     environment:
       - POSTGRES_HOST=db
-      - POSTGRES_USER=${POSTGRES_USER:-user}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
-      - POSTGRES_DB=${POSTGRES_DB:-api_prod}
-      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-@daily}
-      - BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-7}
-      - BACKUP_KEEP_WEEKS=${BACKUP_KEEP_WEEKS:-4}
-      - BACKUP_KEEP_MONTHS=${BACKUP_KEEP_MONTHS:-6}
-      - BACKUP_COMPRESSION=${BACKUP_COMPRESSION:-true}
-    command: crond -f -d 8
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=api
+      - BACKUP_SCHEDULE=@daily
+    networks:
+      - app_network
+    entrypoint: ["/app/docker/entrypoint.backup.sh"]
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
-  backup_data: 
+  backup_data:
+  redis_data: 
+
+networks:
+  app_network:
+    driver: bridge 
