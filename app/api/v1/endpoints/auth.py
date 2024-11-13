@@ -6,6 +6,7 @@ from app.models.responses.auth import TokenResponse, UserResponse
 from app.core.db import get_session
 from app.core.auth import require_auth
 from app.core.exceptions import APIError
+import hashlib
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -137,7 +138,12 @@ def revoke_api_key(key_id: int):
     db = next(get_session())
     auth_service = AuthService(db)
 
-    auth_service.revoke_api_key(key_id, g.user_id)
+    # Get the current key hash if we're using API key auth
+    current_key_hash = None
+    if hasattr(g, 'api_key'):
+        current_key_hash = hashlib.sha256(g.api_key.encode()).hexdigest()
+
+    auth_service.revoke_api_key(key_id, g.user_id, current_key_hash)
     return SuccessResponse(
         message="API key revoked successfully"
     ).dict()

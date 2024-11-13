@@ -248,7 +248,7 @@ class AuthService:
 
         return raw_key
 
-    def revoke_api_key(self, key_id: int, user_id: int):
+    def revoke_api_key(self, key_id: int, user_id: int, current_key_hash: str = None):
         """Revoke an API key"""
         api_key = self.db.query(APIKey).filter(
             APIKey.id == key_id,
@@ -261,6 +261,14 @@ class AuthService:
                 message="API key not found",
                 code="AUTH_KEY_NOT_FOUND",
                 status_code=404
+            )
+
+        # Prevent revoking the key that's being used for authentication
+        if current_key_hash and api_key.key_hash == current_key_hash:
+            raise APIError(
+                message="Cannot revoke the API key that's currently being used",
+                code="AUTH_CANNOT_REVOKE_CURRENT_KEY",
+                status_code=400
             )
 
         api_key.is_active = False

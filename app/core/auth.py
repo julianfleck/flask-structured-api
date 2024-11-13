@@ -68,6 +68,7 @@ def require_auth(f):
                     user = auth_service.validate_token(token)
                 elif token_type == 'apikey':
                     user = auth_service.validate_api_key(token)
+                    g.api_key = token
                 else:
                     raise APIError(
                         message="Invalid token type",
@@ -97,6 +98,7 @@ def require_auth(f):
             user = auth_service.validate_api_key(api_key)
             g.user = user
             g.user_id = user.id
+            g.api_key = api_key
             return f(*args, **kwargs)
 
         raise APIError(
