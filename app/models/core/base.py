@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlmodel import SQLModel, Field
 from pydantic import root_validator
@@ -20,6 +20,38 @@ class CoreModel(SQLModel):
 
 class BaseRequestModel(SQLModel):
     """Base model for API requests"""
+
+    @root_validator(pre=True)
+    def parse_dates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse date fields and ensure timezone awareness"""
+        for field_name, value in values.items():
+            if isinstance(value, str) and ('date' in field_name.lower() or 'time' in field_name.lower()):
+                try:
+                    # Handle different date formats
+                    if len(value) == 10:  # YYYY-MM-DD
+                        value = f"{value}T00:00:00Z"
+                    elif not value.endswith('Z'):
+                        value = f"{value}Z"
+
+                    # Parse and ensure UTC timezone
+                    parsed_date = datetime.fromisoformat(
+                        value.replace('Z', '+00:00'))
+
+                    # Validate not in future
+                    if parsed_date > datetime.now(timezone.utc):
+                        raise ValueError(
+                            f"{field_name} cannot be in the future")
+
+                    values[field_name] = parsed_date
+                except ValueError as e:
+                    if "future" in str(e):
+                        raise
+                    raise ValueError(
+                        f"Invalid date format for {field_name}. "
+                        "Supported formats: YYYY-MM-DD, YYYY-MM-DDThh:mm:ss, YYYY-MM-DDThh:mm:ssZ"
+                    )
+
+        return values
 
     @root_validator(pre=True)
     def check_extra_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
