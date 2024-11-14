@@ -64,21 +64,44 @@ def register_error_handlers(app: Flask):
     def handle_generic_error(error: Exception) -> Response:
         """Handle all unhandled exceptions"""
         if isinstance(error, APIError):
-            # Let the APIError handler deal with it
             return handle_api_error(error)
+
+        # Basic error info always included
+        error_context = {
+            "error": str(error)
+        }
+
+        # Add detailed context only in development mode
+        if current_app.debug:
+            import traceback
+            error_context.update({
+                "error_type": error.__class__.__name__,
+                "error_module": error.__class__.__module__,
+                "traceback": traceback.format_exc(),
+                "function": traceback.extract_tb(error.__traceback__)[-1].name
+            })
 
         error_detail = ErrorDetail(
             code="INTERNAL_SERVER_ERROR",
-            details={"error": str(error)}
+            details=error_context
         )
+
+        # Use detailed message only in development mode
+        message = "An unexpected error occurred"
+        if current_app.debug:
+            message = "Error in {}.{}: {}".format(
+                error.__class__.__module__,
+                error.__class__.__name__,
+                str(error)
+            )
 
         response = ErrorResponse(
             success=False,
             error=error_detail,
-            message="An unexpected error occurred"
+            message=message
         )
 
-        return make_response(response.dict(), 500)
+        return make_response(response.model_dump(), 500)
 
     @app.errorhandler(APIError)
     def handle_api_error(error: APIError) -> Response:
