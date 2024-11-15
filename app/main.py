@@ -8,7 +8,6 @@ from app.api.v1 import api_v1
 from app.models import (
     User,
     APIKey,
-    Item,
     CoreModel,
     BaseRequestModel,
     BaseResponseModel,
@@ -85,8 +84,19 @@ def create_app() -> Flask:
     app.register_blueprint(root_bp)
     app.register_blueprint(api_v1)
 
+    # Register hello blueprint
+    from app.api.v1.endpoints.hello import hello_bp
+    app.register_blueprint(hello_bp)
+
     # Register CLI commands
     from app.cli import init_cli
     init_cli(app)
+
+    # Register middleware
+    from app.core.middleware import setup_request_context
+
+    @app.before_request
+    def before_request():
+        setup_request_context()
 
     return app
