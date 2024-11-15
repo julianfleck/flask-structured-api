@@ -1,5 +1,9 @@
-from .base import APIResponse, SuccessResponse, ErrorResponse, ErrorDetail
-from .ai import AIResponse
+from app.models.responses.base import ErrorResponse, SuccessResponse
+from app.models.responses.storage import StorageEntryResponse, StorageListResponse
 
-__all__ = ['APIResponse', 'SuccessResponse',
-           'ErrorResponse', 'ErrorDetail', 'AIResponse']
+__all__ = [
+    "ErrorResponse",
+    "SuccessResponse",
+    "StorageEntryResponse",
+    "StorageListResponse"
+]

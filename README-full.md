@@ -1,8 +1,3 @@
-
-- [[Flask API Boilerplate/Fragments]]
-- [[Flask API Boilerplate/Github-Readme]]
----
-
 # Flask API Boilerplate with LLM Integration
 
 A production-ready Flask API boilerplate using SQLModel, PostgreSQL, Redis, and LLM integrations. Built for developers who need a robust foundation for building AI-powered APIs while following best practices for production deployments.
@@ -159,7 +154,7 @@ Let's create a simple endpoint to verify the setup:
 1. Create a new file `app/api/v1/endpoints/hello.py`:
 ```python
 from flask import Blueprint
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 from datetime import datetime
 
 hello_bp = Blueprint('hello', __name__)
@@ -373,9 +368,6 @@ class ItemListResponse(BaseResponseModel):
     size: int
     has_more: bool
 ```
-
-
-[Previous section 3.1 remains as shown above]
 
 ### 3.2 Authentication & Authorization
 
@@ -917,7 +909,7 @@ from app.core.auth import require_auth
 from app.services.document import DocumentService
 from app.models.requests.document import CreateDocumentRequest
 from app.models.responses.document import DocumentResponse
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 
 documents_bp = Blueprint('documents', __name__)
 

@@ -8,6 +8,7 @@ from app.models.responses import ErrorResponse
 from app.models.errors import HTTPErrorDetail, DatabaseErrorDetail, ValidationErrorItem, ValidationErrorDetail, ErrorDetail
 from app.core.exceptions import APIError
 from app.core.warnings import WarningCollector
+from app.core.exceptions.validation import ValidationErrorCode
 
 
 def register_error_handlers(app: Flask):
@@ -129,56 +130,52 @@ def register_error_handlers(app: Flask):
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(error):
-        validation_errors = []
+        """Handle both custom and Pydantic validation errors"""
+        # Handle Pydantic ValidationError
+        if hasattr(error, 'errors'):
+            validation_errors = []
+            for err in error.errors():
+                # Map Pydantic error types to our ValidationErrorCode
+                error_type = err["type"]
+                if "datetime" in error_type:
+                    code = ValidationErrorCode.INVALID_FORMAT
+                elif "missing" in error_type:
+                    code = ValidationErrorCode.MISSING_FIELD
+                else:
+                    code = ValidationErrorCode.CONSTRAINT_VIOLATION
 
-        # Get the model name from the error context
-        model_name = None
-        if hasattr(error, 'model'):
-            model_name = error.model.__name__
-        elif hasattr(error, '_model'):
-            model_name = error._model.__name__
-        elif hasattr(error, 'raw_errors') and error.raw_errors:  # Pydantic v2
-            model_ctx = getattr(error.raw_errors[0], 'loc', None)
-            if model_ctx:
-                model_name = model_ctx[0]
-
-        # Extract validation errors
-        raw_errors = error.errors() if hasattr(error, 'errors') else [
-            {'loc': ['unknown'], 'msg': str(error), 'type': 'validation_error'}]
-
-        for e in raw_errors:
-            field_path = " -> ".join(str(loc) for loc in e["loc"])
-            validation_errors.append(
-                ValidationErrorItem(
-                    field=field_path,
-                    message=e["msg"],
-                    type=e["type"]
+                field_path = " -> ".join(str(loc) for loc in err["loc"])
+                validation_errors.append(
+                    ValidationErrorItem(
+                        field=field_path,
+                        message=err["msg"],
+                        type=code.value  # Use our semantic error codes
+                    )
                 )
-            )
-
-        # Get required fields from validation errors
-        required_fields = [
-            e.field for e in validation_errors
-            if e.type == "value_error.missing"
-        ]
+        # Handle our custom ValidationError
+        else:
+            validation_errors = [
+                ValidationErrorItem(
+                    field=error.details["field"],
+                    message=error.message,
+                    type=error.code  # Already using our semantic codes
+                )
+            ]
 
         error_detail = ValidationErrorDetail(
-            code="VALIDATION_ERROR",
+            # Use the first error's code as main code
+            code=validation_errors[0].type,
             errors=validation_errors,
-            required_fields=required_fields,
             details={
                 "total_errors": len(validation_errors),
-                "schema": model_name,
                 "validation_context": "request_payload",
                 "validation_errors": [e.model_dump() for e in validation_errors]
             }
         )
 
-        model_str = model_name or 'request'
-        message = f"Validation failed for {model_str}"
-
         response = ErrorResponse(
-            message=message,
+            message=error.message if hasattr(
+                error, 'message') else "Validation failed for request",
             error=error_detail,
             status=422
         )

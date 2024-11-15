@@ -4,6 +4,81 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 
 # [Unreleased]
 
+
+## [0.2.2] - 2024-11-15
+
+### Added
+- Comprehensive API request/response storage system
+  - Automatic storage decorator with compression support
+  - Session-based request grouping
+  - Flexible metadata filtering
+  - TTL-based storage expiration
+  - Timezone-aware date filtering
+- Storage query endpoints with pagination
+  - /storage/query for direct data access
+  - /storage/sessions for session management
+  - /storage/sessions/query for detailed session data
+- Storage management features
+  - Automatic data compression for large payloads
+  - TTL-based cleanup
+  - Admin-only delete endpoint
+- Warning system for storage optimization
+  - Performance optimization hints
+  - Non-critical issue reporting
+  - Structured warning responses
+- Comprehensive storage documentation
+  - Setup guides and best practices
+  - Query optimization tips
+  - Session management guidelines
+
+### Changed
+- Enhanced response models to support storage metadata
+- Improved session handling with automatic timeout
+- Updated API documentation with storage endpoints
+- Enhanced warning system to support storage-specific warnings
+
+### Security
+- Added role-based access for storage management
+- Implemented user-scoped storage queries
+- Added validation for storage operations
+
+## [0.2.1] - 2024-11-13
+
+### Added
+- API key management system with secure token generation
+- API key endpoints for creation, listing and revocation
+- Maximum API keys per user limit
+- Scoped API key support with customizable permissions
+- API key model with hash-based storage
+- Last used tracking for API keys
+- Optional expiration for API keys
+- API data storage system with request/response tracking
+  - Storage query endpoint with filtering and pagination
+  - Storage delete endpoint with admin access control
+  - Automatic request/response storage decorator
+  - Compressed data storage support
+  - TTL-based storage expiration
+  - Metadata filtering for stored data
+- Endpoint normalization and validation
+
+### Fixed
+- Token refresh validation with proper secret key
+- Token type validation in refresh flow
+- Refresh token error handling with specific error codes
+- JWT token validation in auth service
+
+### Changed
+- Enhanced token refresh mechanism to maintain refresh token
+- Improved API key security with hash-based storage
+- Standardized API key response format
+- Added user ownership validation for API key operations
+
+### Security
+- Implemented secure API key generation using secrets module
+- Added SHA-256 hashing for API key storage
+- Restricted API key access to authenticated users only
+- Added user validation for API key operations
+
 ## [0.2.0] - 2024-11-12
 
 ### Added

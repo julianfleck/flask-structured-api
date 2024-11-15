@@ -10,6 +10,7 @@ import time
 from sqlalchemy import text
 from app.core.db import engine
 from app.core.auth import optional_auth, require_auth
+from app.core.cache import redis_client
 
 health_bp = Blueprint('health', __name__)
 
@@ -19,6 +20,15 @@ def check_database() -> bool:
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
+def check_redis() -> bool:
+    """Check Redis connectivity"""
+    try:
+        redis_client.ping()
         return True
     except Exception:
         return False
@@ -43,7 +53,8 @@ def health_check():
         "name": settings.API_NAME,
         "version": settings.API_VERSION,
         "components": {
-            "database": "healthy" if db_healthy else "unhealthy"
+            "database": "healthy" if db_healthy else "unhealthy",
+            "redis": "healthy" if check_redis() else "unhealthy"
         }
     }
 

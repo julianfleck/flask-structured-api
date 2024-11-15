@@ -22,3 +22,7 @@ anthropic>=0.3.0
 # Utils
 python-dateutil>=2.8.2
 email-validator>=1.1.3
+redis>=5.0.0
+
+# Health Checks
+psutil>=5.9.0

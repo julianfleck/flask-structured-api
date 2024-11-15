@@ -78,7 +78,7 @@ flask-ai-api-boilerplate/
 ### Basic Endpoint
 ```python
 from flask import Blueprint
-from app.core.responses import SuccessResponse
+from app.models.responses import SuccessResponse
 from app.core.auth import require_auth
 
 example_bp = Blueprint('example', __name__)

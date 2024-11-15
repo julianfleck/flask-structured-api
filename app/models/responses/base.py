@@ -18,7 +18,10 @@ class SuccessResponse(APIResponse):
     success: bool = True
 
     def dict(self, *args, **kwargs):
-        data = super().dict(*args, **kwargs)
+        return self.model_dump(*args, **kwargs)
+
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
         warning_collector = WarningCollector()
 
         data['warnings'] = [
@@ -26,11 +29,10 @@ class SuccessResponse(APIResponse):
                 code=w.code,
                 message=w.message,
                 severity=w.severity
-            ).dict()
+            ).model_dump()
             for w in warning_collector.get_warnings()
         ]
 
-        warning_collector.clear_warnings()
         return data
 
 

@@ -14,9 +14,18 @@ class WarningCode(str, Enum):
     RATE_LIMIT_WARNING = "rate_limit_warning"
     PERFORMANCE_WARNING = "performance_warning"
     UNEXPECTED_PARAM = "unexpected_param"
+    NO_RESULTS_FOUND = "no_results_found"
+    DEPRECATED_USAGE = "deprecated_usage"
+    PARAMETER_PRECEDENCE = "parameter_precedence"
 
 
 class WarningSeverity(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
+
+class StorageType(str, Enum):
+    REQUEST = "request"
+    RESPONSE = "response"
+    BOTH = "both"

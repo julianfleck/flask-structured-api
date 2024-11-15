@@ -11,6 +11,10 @@ class User(CoreModel, table=True):
     """User model with enhanced tracking fields"""
     __tablename__ = "users"
 
+    model_config = {
+        "arbitrary_types_allowed": True
+    }
+
     email: str = Field(unique=True, index=True)
     hashed_password: str
     full_name: str
@@ -21,5 +25,4 @@ class User(CoreModel, table=True):
     preferences: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
     permissions: List[str] = Field(default_factory=list, sa_type=JSON)
 
-    # Relationships
-    items: List["Item"] = Relationship(back_populates="user")
+    storage_entries: List["APIStorage"] = Relationship(back_populates="user")

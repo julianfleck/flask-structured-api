@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlmodel import SQLModel, Field
-from pydantic import root_validator
+from pydantic import root_validator, ValidationError
 from app.core.warnings import WarningCollector
 from app.models.enums import WarningCode, WarningSeverity
+from app.models.errors import ValidationErrorDetail, ValidationErrorItem
+from app.core.exceptions.validation import ValidationError, ValidationErrorCode
 
 
 class CoreModel(SQLModel):
@@ -22,16 +24,16 @@ class BaseRequestModel(SQLModel):
     """Base model for API requests"""
 
     @root_validator(pre=True)
-    def parse_dates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse date fields and ensure timezone awareness"""
+    def validate_request(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate request data and handle errors consistently"""
         for field_name, value in values.items():
             if isinstance(value, str) and ('date' in field_name.lower() or 'time' in field_name.lower()):
                 try:
                     # Handle different date formats
                     if len(value) == 10:  # YYYY-MM-DD
-                        value = f"{value}T00:00:00Z"
+                        value = "{}T00:00:00Z".format(value)
                     elif not value.endswith('Z'):
-                        value = f"{value}Z"
+                        value = "{}Z".format(value)
 
                     # Parse and ensure UTC timezone
                     parsed_date = datetime.fromisoformat(
@@ -39,16 +41,20 @@ class BaseRequestModel(SQLModel):
 
                     # Validate not in future
                     if parsed_date > datetime.now(timezone.utc):
-                        raise ValueError(
-                            f"{field_name} cannot be in the future")
+                        raise ValidationError(
+                            message=f"{field_name} cannot be in the future",
+                            code=ValidationErrorCode.FUTURE_DATE,
+                            field=field_name
+                        )
 
                     values[field_name] = parsed_date
-                except ValueError as e:
-                    if "future" in str(e):
-                        raise
-                    raise ValueError(
-                        f"Invalid date format for {field_name}. "
-                        "Supported formats: YYYY-MM-DD, YYYY-MM-DDThh:mm:ss, YYYY-MM-DDThh:mm:ssZ"
+                except ValueError:
+                    raise ValidationError(
+                        message="Invalid date format. Expected: YYYY-MM-DD or YYYY-MM-DDThh:mm:ssZ",
+                        code=ValidationErrorCode.INVALID_FORMAT,
+                        field=field_name,
+                        context={"allowed_formats": [
+                            "YYYY-MM-DD", "YYYY-MM-DDThh:mm:ssZ"]}
                     )
 
         return values
@@ -57,13 +63,19 @@ class BaseRequestModel(SQLModel):
     def check_extra_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Collect extra fields as warnings instead of rejecting them"""
         model_fields = cls.__fields__.keys()
-        extra_fields = [k for k in values.keys() if k not in model_fields]
+        # Get all field aliases
+        field_aliases = {
+            field.alias for field in cls.__fields__.values()
+            if hasattr(field, 'alias') and field.alias
+        }
+        valid_names = set(model_fields) | field_aliases
+
+        extra_fields = [k for k in values.keys() if k not in valid_names]
 
         if extra_fields:
-            warning_collector = WarningCollector()
             # Create a separate warning for each extra field
             for field in extra_fields:
-                warning_collector.add_warning(
+                WarningCollector.add_warning(
                     message="Unexpected field in request: {}".format(field),
                     code=WarningCode.UNEXPECTED_PARAM,
                     severity=WarningSeverity.LOW

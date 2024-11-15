@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 20
 
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = Field(..., env="REDIS_URL")
     REDIS_MAX_CONNECTIONS: int = 100
 
     # Security
@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     # API Key Settings
     MAX_API_KEYS_PER_USER: int = 5
     API_KEY_PREFIX: str = "sk_"  # For identifying API keys
+
+    # Storage settings
+    STORAGE_SESSION_TIMEOUT: int = 30  # minutes
 
     model_config = SettingsConfigDict(
         env_file=".env",

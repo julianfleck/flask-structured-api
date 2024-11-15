@@ -20,7 +20,7 @@ def init_migrations(app: Flask) -> None:
     """Initialize database migrations"""
     # Import all models to register them with SQLModel
     from app.models import (
-        User, APIKey, Item, CoreModel,
+        User, APIKey, CoreModel,
         APIStorage, StorageBase
     )
 
