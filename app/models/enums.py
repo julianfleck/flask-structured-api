@@ -17,6 +17,7 @@ class WarningCode(str, Enum):
     NO_RESULTS_FOUND = "no_results_found"
     DEPRECATED_USAGE = "deprecated_usage"
     PARAMETER_PRECEDENCE = "parameter_precedence"
+    ENDPOINT_NORMALIZED = "endpoint_normalized"
 
 
 class WarningSeverity(str, Enum):

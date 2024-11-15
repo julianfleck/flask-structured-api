@@ -13,6 +13,7 @@ from app.core.session import get_or_create_session
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import cast
 from datetime import timezone
+from app.core.config import settings  # Import here to avoid circular imports
 
 
 class StorageService:
@@ -292,10 +293,40 @@ class StorageService:
 
         if endpoint:
             before_count = len(filtered_entries)
-            filtered_entries = [
-                e for e in filtered_entries if e.endpoint == endpoint]
-            if not filtered_entries and before_count > 0:
+            endpoint_variations = self._normalize_endpoint(endpoint)
+
+            # Try each endpoint variation
+            matched_entries = []
+            matched_variation = None
+
+            for variation in endpoint_variations:
+                current_matches = [
+                    e for e in filtered_entries
+                    if e.endpoint.strip('/ ').lower() == variation.strip('/ ')
+                ]
+                if current_matches:
+                    matched_entries.extend(current_matches)
+                    if not matched_variation:  # Keep track of first matching variation
+                        matched_variation = variation
+
+            if matched_entries:
+                filtered_entries = matched_entries
+                if matched_variation != endpoint:
+                    WarningCollector.add_warning(
+                        message="Found entries using normalized endpoint: '{}' (original: '{}')".format(
+                            matched_variation, endpoint),
+                        code=WarningCode.ENDPOINT_NORMALIZED,
+                        severity=WarningSeverity.LOW
+                    )
+            elif before_count > 0:
                 filter_results['endpoint'] = endpoint
+                # Add more specific warning about tried variations
+                WarningCollector.add_warning(
+                    message="No entries found for endpoint '{}'. Tried variations: {}".format(
+                        endpoint, ', '.join(endpoint_variations)),
+                    code=WarningCode.NO_RESULTS_FOUND,
+                    severity=WarningSeverity.LOW
+                )
 
         if start_date or end_date:
             before_count = len(filtered_entries)
@@ -439,3 +470,40 @@ class StorageService:
             'page_size': page_size,
             'has_more': total > page * page_size
         }
+
+    def _normalize_endpoint(self, endpoint: str) -> List[str]:
+        """Normalize endpoint to try different variations"""
+        from app.core.config import settings  # Import here to avoid circular imports
+
+        if not endpoint:
+            return []
+
+        # Strip leading/trailing slashes and whitespace
+        clean_endpoint = endpoint.strip('/ ').lower()
+
+        # Get API version prefix from settings
+        version_prefix = settings.API_VERSION_PREFIX
+
+        # Generate variations
+        variations = {
+            f"/{clean_endpoint}",         # /health
+            clean_endpoint,               # health
+            f"/{version_prefix}/{clean_endpoint}",  # /v1/health
+            f"{version_prefix}/{clean_endpoint}"    # v1/health
+        }
+
+        # If endpoint already starts with vX/, also add without version
+        if any(clean_endpoint.startswith(f"{v}/") for v in [version_prefix, "v1", "v2"]):
+            # Extract base endpoint after any version prefix
+            base_endpoint = clean_endpoint.split(
+                '/', 1)[1] if '/' in clean_endpoint else clean_endpoint
+            variations.add(f"/{base_endpoint}")
+            variations.add(base_endpoint)
+
+        # Add debug log
+        current_app.logger.debug(
+            "Normalized endpoint '{}' to variations: {}".format(
+                endpoint, variations)
+        )
+
+        return list(variations)

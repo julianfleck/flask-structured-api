@@ -6,7 +6,8 @@ from pydantic import Field
 class Settings(BaseSettings):
     # API Settings
     API_NAME: str = "Flask AI API Boilerplate"
-    API_VERSION: str = "1.0.0"
+    API_VERSION: str = "1.0.0"  # This will be used for endpoint normalization
+    API_VERSION_PREFIX: str = "v1"
     API_DEBUG: bool = False
     API_HOST: str = "${API_HOST}"
     API_PORT: int = "${API_PORT}"
