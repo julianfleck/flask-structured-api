@@ -305,6 +305,11 @@ class StorageService:
                     if e.created_at.replace(tzinfo=timezone.utc) >= start_date
                 ]
             if end_date:
+                # Only adjust to end of day if time wasn't specified (hour, minute, second all 0)
+                if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
+                    end_date = end_date.replace(
+                        hour=23, minute=59, second=59, microsecond=999999
+                    )
                 filtered_entries = [
                     e for e in filtered_entries
                     if e.created_at.replace(tzinfo=timezone.utc) <= end_date
