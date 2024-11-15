@@ -198,16 +198,6 @@ class StorageService:
             metadata_filters=metadata_filters
         )
 
-        if not filtered_entries:
-            warning_msg = "No sessions found"
-            if start_date or end_date:
-                warning_msg += " in specified date range"
-            WarningCollector.add_warning(
-                message=warning_msg,
-                code=WarningCode.NO_RESULTS_FOUND,
-                severity=WarningSeverity.MEDIUM
-            )
-
         # Group by session
         sessions = {}
         for entry in filtered_entries:
@@ -259,7 +249,7 @@ class StorageService:
         session_id: Optional[str] = None,
         metadata_filters: Dict[str, Any] = None,
     ) -> List[APIStorage]:
-        """Base function for filtering storage entries"""
+        """Base function for filtering storage entries with detailed warnings"""
         # Handle session_id precedence
         if session_id and metadata_filters and 'session_id' in metadata_filters:
             WarningCollector.add_warning(
@@ -267,7 +257,6 @@ class StorageService:
                 code=WarningCode.PARAMETER_PRECEDENCE,
                 severity=WarningSeverity.LOW
             )
-            # Remove session_id from metadata filters since we're using the parameter
             metadata_filters = {
                 k: v for k, v in metadata_filters.items() if k != 'session_id'}
 
@@ -278,9 +267,8 @@ class StorageService:
 
         # Build base query with only basic filters
         query = select(APIStorage).where(APIStorage.user_id == user_id)
-
-        # First get all entries for the user to check what failed
         base_entries = self.db.execute(query).scalars().all()
+
         if not base_entries:
             WarningCollector.add_warning(
                 message="No storage entries found for this user",
@@ -289,70 +277,83 @@ class StorageService:
             )
             return []
 
-        # Apply filters one by one to track what fails
         filtered_entries = base_entries
+        initial_count = len(filtered_entries)
+
+        # Track filter results
+        filter_results = {}
 
         if storage_type:
+            before_count = len(filtered_entries)
             filtered_entries = [
                 e for e in filtered_entries if e.storage_type == storage_type]
-            if not filtered_entries:
-                WarningCollector.add_warning(
-                    message="No entries found with storage type '{}'".format(
-                        storage_type),
-                    code=WarningCode.NO_RESULTS_FOUND,
-                    severity=WarningSeverity.MEDIUM
-                )
-                return []
+            if not filtered_entries and before_count > 0:
+                filter_results['storage_type'] = storage_type.value
 
         if endpoint:
+            before_count = len(filtered_entries)
             filtered_entries = [
                 e for e in filtered_entries if e.endpoint == endpoint]
-            if not filtered_entries:
-                WarningCollector.add_warning(
-                    message="No entries found for endpoint '{}'".format(
-                        endpoint),
-                    code=WarningCode.NO_RESULTS_FOUND,
-                    severity=WarningSeverity.MEDIUM,
-                    priority=1
-                )
-                return []
+            if not filtered_entries and before_count > 0:
+                filter_results['endpoint'] = endpoint
 
         if start_date or end_date:
-            date_filtered = filtered_entries
+            before_count = len(filtered_entries)
             if start_date:
-                date_filtered = [
-                    e for e in date_filtered
+                filtered_entries = [
+                    e for e in filtered_entries
                     if e.created_at.replace(tzinfo=timezone.utc) >= start_date
                 ]
             if end_date:
-                date_filtered = [
-                    e for e in date_filtered
+                filtered_entries = [
+                    e for e in filtered_entries
                     if e.created_at.replace(tzinfo=timezone.utc) <= end_date
                 ]
-            if not date_filtered:
-                date_range = "between {} and {}".format(start_date, end_date) if start_date and end_date else \
-                    "after {}".format(
-                        start_date) if start_date else "before {}".format(end_date)
-                WarningCollector.add_warning(
-                    message="No entries found {}".format(date_range),
-                    code=WarningCode.NO_RESULTS_FOUND,
-                    severity=WarningSeverity.MEDIUM,
-                    priority=2
-                )
-                return []
-            filtered_entries = date_filtered
+            if not filtered_entries and before_count > 0:
+                if start_date and end_date:
+                    date_range = "{} to {}".format(start_date, end_date)
+                elif start_date:
+                    date_range = "after {}".format(start_date)
+                else:
+                    date_range = "before {}".format(end_date)
+                filter_results['date_range'] = date_range
 
         if metadata_filters:
-            metadata_filtered = [
+            before_count = len(filtered_entries)
+            filtered_entries = [
                 entry for entry in filtered_entries
                 if all(
                     entry.storage_metadata.get(key) == value
                     for key, value in metadata_filters.items()
                 )
             ]
-            if not metadata_filtered:
-                return []
-            filtered_entries = metadata_filtered
+            if not filtered_entries and before_count > 0:
+                filter_results['metadata'] = metadata_filters
+
+        # Generate appropriate warning based on what filtered out results
+        if not filtered_entries and filter_results:
+            messages = []
+            if 'storage_type' in filter_results:
+                messages.append("storage type '{}'".format(
+                    filter_results['storage_type']))
+            if 'endpoint' in filter_results:
+                messages.append("endpoint '{}'".format(
+                    filter_results['endpoint']))
+            if 'date_range' in filter_results:
+                messages.append("date range {}".format(
+                    filter_results['date_range']))
+            if 'metadata' in filter_results:
+                metadata_str = ', '.join("{}='{}'".format(k, v)
+                                         for k, v in filter_results['metadata'].items())
+                messages.append("metadata filters {}".format(metadata_str))
+
+            warning_msg = "No entries found matching " + " and ".join(messages)
+
+            WarningCollector.add_warning(
+                message=warning_msg,
+                code=WarningCode.NO_RESULTS_FOUND,
+                severity=WarningSeverity.MEDIUM
+            )
 
         return filtered_entries
 
