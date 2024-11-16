@@ -8,6 +8,21 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 ## [0.2.2] - 2024-11-15
 
 ### Added
+- Enhanced session pagination and filtering
+  - Added entries_per_session parameter for detailed queries
+  - Added metadata-based session filtering
+  - Added pagination for session listings
+  - Added detailed and simple session response models
+  - Added session-specific warnings
+- Comprehensive storage documentation update
+  - Added clear introduction and use cases
+  - Added practical AI model examples
+  - Added detailed API reference
+  - Added troubleshooting section
+  - Added security considerations
+  - Added best practices
+  - Added future improvements roadmap
+  - Added warning system documentation
 - Comprehensive API request/response storage system
   - Automatic storage decorator with compression support
   - Session-based request grouping
@@ -32,6 +47,10 @@ All notable changes to the Flask API Boilerplate will be documented in this file
   - Session management guidelines
 
 ### Changed
+- Improved session handling with granular control
+- Enhanced documentation structure with progressive complexity
+- Updated API reference with detailed parameters
+- Standardized warning system documentation
 - Enhanced response models to support storage metadata
 - Improved session handling with automatic timeout
 - Updated API documentation with storage endpoints
