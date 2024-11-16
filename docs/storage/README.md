@@ -1,103 +1,119 @@
 # Storage System Documentation
 
-The storage system provides a robust way to persist API requests, responses, and session data. It features automatic compression, TTL (time-to-live), flexible metadata filtering, and pagination support. The system is designed to be easy to integrate while providing powerful querying capabilities.
+The storage system helps you persist API requests, responses, and session data. It's particularly useful for tracking AI model interactions, caching expensive operations, or maintaining audit trails of user interactions. With built-in features like compression and TTL management, it aims to make data storage and retrieval straightforward while giving you the flexibility to query and analyze your stored data.
 
-## Core Features
+## Use Cases
 
-- Store and retrieve API requests/responses
-- Automatic session management
-- Flexible metadata filtering
-- Data compression
-- Time-to-live (TTL) support 
-- Pagination
-- Warning system for non-critical issues
-- Timezone-aware date filtering
+Common scenarios where the storage system can help:
 
-## Setting Up Storage
+- **AI Model Interactions**: Track prompts and responses for analysis or training
+- **Caching**: Store expensive computation results
+- **Audit Trails**: Monitor user interactions and changes
+- **Debugging**: Review past API behavior
+- **Analytics**: Understand API usage patterns
 
-The easiest way to integrate storage is using the `@store_api_data` decorator. This automatically captures requests, responses, and manages sessions.
+## Quick Start
 
-### Basic Usage
+Add storage to any endpoint with a single decorator:
 
 ```python
 from app.core.storage.decorators import store_api_data
-from app.models.enums import StorageType
 
-@store_api_data(storage_type=StorageType.BOTH)
-def my_endpoint():
-    return {"message": "This request and response will be stored"}
+@store_api_data()  # Stores both request and response by default
+def generate_text():
+    response = ai_service.generate(request.json["prompt"])
+    return {"text": response}
 ```
 
-### Advanced Configuration
+## Core Concepts
 
-The decorator supports several options for customizing storage behavior:
+### Storage Types
+
+The system can store requests, responses, or both:
+```python
+@store_api_data(storage_type=StorageType.RESPONSE)  # Store only responses
+@store_api_data(storage_type=StorageType.REQUEST)   # Store only requests
+@store_api_data(storage_type=StorageType.BOTH)      # Store both (default)
+```
+
+### Sessions
+
+Sessions automatically group related requests. For example, when a user is refining AI-generated text through multiple iterations, all those interactions are part of one session.
 
 ```python
 @store_api_data(
-    storage_type=StorageType.BOTH,      # Store both request and response
-    ttl_days=7,                         # Auto-delete after 7 days
-    compress=True,                      # Enable compression
-    metadata={"version": "v1"},         # Add custom metadata
-    session_timeout_minutes=60          # Custom session timeout
+    session_timeout_minutes=60  # Group requests for 60 minutes
 )
-def advanced_endpoint():
-    return {"message": "Configured storage"}
+def refine_text():
+    return ai_service.refine(request.json["text"])
 ```
 
-The decorator automatically captures:
-- Complete request data:
-  - HTTP method
-  - Request path
-  - Query parameters
-  - Headers
-  - Request body (if JSON)
-- Response data
-- Session information
-- Custom metadata
+### Data Management
 
-## Querying Stored Data
+The system includes built-in features for efficient data handling:
 
-The storage system provides several endpoints for retrieving stored data.
+```python
+@store_api_data(
+    ttl_days=30,        # Auto-expire after 30 days
+    compress=True,      # Compress large responses
+    metadata={          # Add custom metadata
+        "model": "gpt-4",
+        "version": "1.0"
+    }
+)
+```
 
-### Query Storage
+## API Reference
+
+### Storage Endpoints
+
+#### Query Storage
 `POST /storage/query`
 
-Query stored API requests and responses with flexible filtering options.
+Search through stored requests and responses.
 
-**Request:**
+**Parameters:**
+- `storage_type`: Type of data to retrieve (`request`|`response`)
+- `endpoint`: Filter by API endpoint
+- `start_date`: ISO 8601 datetime
+- `end_date`: ISO 8601 datetime
+- `metadata_filters`: Custom metadata filters
+- `page`: Page number (default: 1)
+- `page_size`: Items per page (default: 20, max: 100)
+
+**Example Request:**
 ```json
 {
     "storage_type": "response",
-    "endpoint": "/api/v1/users",
-    "start_date": "2024-01-01T00:00:00Z",
-    "end_date": "2024-01-02T00:00:00Z", 
+    "endpoint": "/api/v1/ai/generate",
+    "start_date": "2024-03-01T00:00:00Z",
+    "end_date": "2024-03-02T00:00:00Z",
     "metadata_filters": {
-        "session_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-        "version": "v1"
+        "model": "gpt-4"
     },
     "page": 1,
     "page_size": 20
 }
 ```
 
-**Success Response:**
+**Example Response:**
 ```json
 {
     "success": true,
-    "message": "Storage entries retrieved",
     "data": {
         "items": [{
             "id": 1,
             "type": "response",
-            "endpoint": "/api/v1/users",
-            "created_at": "2024-01-01T12:00:00Z",
-            "ttl": "2024-01-08T12:00:00Z",
+            "endpoint": "/api/v1/ai/generate",
+            "created_at": "2024-03-01T12:00:00Z",
+            "ttl": "2024-03-31T12:00:00Z",
             "storage_info": {
-                "session_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                "version": "v1"
+                "model": "gpt-4",
+                "session_id": "f47ac10b-58cc"
             },
             "data": {
-                "original_response": "data"
+                "text": "Generated response",
+                "tokens": 150
             }
         }],
         "total": 1,
@@ -108,63 +124,46 @@ Query stored API requests and responses with flexible filtering options.
 }
 ```
 
-### Session Management
+### Session Endpoints
 
-Sessions automatically group related requests and responses. The system provides two endpoints for working with sessions:
-
-#### List Sessions (Simple)
+#### List Sessions
 `GET /storage/sessions`
 
-Returns a paginated list of sessions with basic information.
+Get an overview of storage sessions.
 
 **Query Parameters:**
-- `page`: Page number (default: 1)
-- `page_size`: Items per page (default: 20, max: 100)
+- `page`: Page number
+- `page_size`: Items per page
 - `endpoint`: Filter by endpoint
-- `storage_type`: Filter by type
 - `start_date`: ISO 8601 datetime
 - `end_date`: ISO 8601 datetime
 - `session_id`: Specific session filter
 
-#### Query Sessions (Detailed)
+#### Query Session Details
 `POST /storage/sessions/query`
 
-Returns detailed session data including all storage entries.
+Get detailed session data including storage entries.
 
-**Request:**
-```json
-{
-    "endpoint": "/api/v1/users",
-    "start_date": "2024-01-01T00:00:00Z",
-    "end_date": "2024-01-02T00:00:00Z",
-    "storage_type": "response",
-    "metadata_filters": {
-        "version": "v1"
-    },
-    "page": 1,
-    "page_size": 20
-}
-```
+**Parameters:**
+All parameters from List Sessions, plus:
+- `entries_per_session`: Maximum entries to return per session
+- `metadata_filters`: Filter by custom metadata
 
-### Data Management
+### Admin Endpoints
 
-#### Delete Storage (Admin Only)
-`POST /storage/delete`
+#### Delete Storage
+`POST /storage/delete` (Admin Only)
 
-Allows administrators to delete specific storage entries.
+Delete specific storage entries.
 
-```json
-{
-    "storage_ids": [1, 2, 3],
-    "force": false  // Set true to bypass TTL checks
-}
-```
+**Parameters:**
+- `storage_ids`: Array of IDs to delete
+- `force`: Bypass TTL checks (default: false)
 
 ## Warning System
 
-Instead of failing requests, the system uses warnings to indicate non-critical issues. These warnings help optimize usage and identify potential problems.
+The system uses warnings to indicate potential issues or optimization opportunities:
 
-### Warning Structure
 ```json
 {
     "code": "WARNING_CODE",
@@ -173,37 +172,122 @@ Instead of failing requests, the system uses warnings to indicate non-critical i
 }
 ```
 
-Common warning codes:
-- `NO_RESULTS_FOUND`: Query returned empty results
-- `PARAMETER_PRECEDENCE`: Conflicting parameters provided
-- `DATE_RANGE_LARGE`: Date range might affect performance
-- `COMPRESSION_RECOMMENDED`: Large payload detected without compression
-- `SESSION_TIMEOUT`: Session timeout occurred
-- `METADATA_CONFLICT`: Conflicting metadata values
+### Implemented Warnings
+
+- `NO_RESULTS_FOUND`: Query returned no matching entries
+  - Severity: MEDIUM
+  - Includes details about which filters caused no matches
+
+- `PARAMETER_PRECEDENCE`: Multiple ways to specify the same parameter
+  - Severity: LOW
+  - Example: "Both session_id parameter and metadata_filters['session_id'] provided"
+
+- `ENDPOINT_NORMALIZED`: Endpoint was normalized to match stored data
+  - Severity: LOW
+  - Shows original and normalized endpoint paths
 
 ## Best Practices
 
-### Session Management
-- Let the system handle session IDs automatically
-- Use session queries to retrieve related data
-- Configure session timeout based on your use case (default: 30 minutes)
-- Monitor session warnings for timeouts
-
-### Storage Optimization
-- Enable compression for large payloads (>1KB)
-- Set appropriate TTL values based on data retention needs
-- Use indexes effectively (endpoint, user_id, created_at)
+### Data Management
+- Set realistic TTL values
+- Use compression for responses >1KB
+- Add relevant metadata for querying
 - Clean up expired data regularly
 
 ### Query Optimization
-- Use specific filters to reduce result set size
-- Always include date ranges for large datasets
-- Combine multiple metadata filters when possible
-- Check warning messages for query optimization hints
-- Use session_id parameter instead of metadata filter when possible
+- Include date ranges
+- Filter by specific endpoints
+- Use metadata filters effectively
+- Monitor warning messages
 
-### Error Handling
-- Monitor warning messages in responses
-- Handle validation errors gracefully (422)
-- Implement retry logic for transient failures (500)
-- Log warning messages for debugging
+### Session Management
+- Let the system handle session IDs
+- Set appropriate timeouts
+- Use session queries for related data
+- Watch for session warnings
+
+## Security
+
+### Access Control
+- Users can only access their own data
+- Sessions are user-isolated
+- Deletion requires admin rights
+
+### Data Protection
+- Filter sensitive data before storage
+- Track sensitive data with metadata
+- Use compression for large payloads
+
+### Resource Management
+- Set appropriate TTLs
+- Use pagination
+- Monitor usage per user
+
+## Troubleshooting
+
+### Missing Data
+- Verify TTL settings
+- Check user permissions
+- Confirm storage configuration
+
+### Performance Issues
+- Use date filters
+- Enable compression
+- Add recommended indexes
+
+### Session Problems
+- Check timeout settings
+- Verify session IDs
+- Monitor session warnings
+
+The storage system aims to make data persistence straightforward while giving you the tools to manage and analyze your API interactions effectively. Start with the basic decorator and add features as needed.
+
+
+### Future Improvements
+
+#### High Priority
+1. **Query Improvements**
+   - Full-text search in stored data
+   - Advanced metadata filtering (regex, ranges)
+   - Bulk operations for data management
+   - Query performance metrics
+
+2. **Storage Optimization**
+   - Smart compression based on content type
+   - Automatic cleanup of expired entries
+   - Storage quota management per user
+   - Compression ratio monitoring
+
+3. **Session Enhancements**
+   - Session tagging for organization
+   - Session context tracking
+   - Cross-session analysis
+   - Custom session grouping rules
+
+#### Medium Priority
+4. **Data Analysis**
+   - Usage statistics per endpoint
+   - Pattern detection in stored data
+   - Basic analytics endpoints
+   - Export functionality (CSV, JSON)
+
+5. **Warning System Expansion**
+- `LARGE_PAYLOAD`: Response size exceeds recommended limits
+- `SESSION_TIMEOUT`: Session has timed out
+- `INDEX_MISSING`: Query performance could be improved with index
+- `TTL_APPROACHING`: Entries near expiration
+- `COMPRESSION_RECOMMENDED`: Large uncompressed payload detected
+- `DUPLICATE_METADATA`: Conflicting metadata values
+
+#### Future Considerations
+6. **Integration Features**
+   - Webhook notifications
+   - External storage support (S3)
+   - Logging system integration
+   - Backup/restore functionality
+
+7. **Advanced Analytics**
+   - Custom metrics tracking
+   - Trend analysis
+   - Usage forecasting
+   - Cost optimization suggestions
