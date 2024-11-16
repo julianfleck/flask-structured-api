@@ -5,7 +5,7 @@ from sqlalchemy.types import String
 import json
 from app.models.core.storage import APIStorage
 from app.models.enums import StorageType
-from app.models.responses.storage import StorageEntryResponse, StorageListResponse, SimpleSessionListResponse, SessionListItemResponse
+from app.models.responses.storage import StorageEntryResponse, StorageListResponse, SimpleSessionListResponse, SessionListItemResponse, DetailedSessionListResponse, SessionWithEntriesResponse
 from app.core.exceptions import APIError
 from app.core.warnings import WarningCollector, WarningCode, WarningSeverity
 from flask import current_app
@@ -13,7 +13,6 @@ from app.core.session import get_or_create_session
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import cast
 from datetime import timezone
-from app.core.config import settings  # Import here to avoid circular imports
 
 
 class StorageService:
@@ -181,15 +180,24 @@ class StorageService:
         storage_type: Optional[StorageType] = None,
         metadata_filters: Dict[str, Any] = None,
         page: int = 1,
-        page_size: int = 20
+        page_size: int = 20,
+        entries_per_session: Optional[int] = 20
     ) -> Dict[str, Any]:
-        """Get user sessions with their request/response pairs"""
-        # Simply pass session_id to metadata_filters if provided
-        if session_id:
-            metadata_filters = metadata_filters or {}
-            metadata_filters['session_id'] = session_id
+        """
+        Get user sessions with their request/response pairs.
 
-        # Let _filter_storage_entries handle the warning logic
+        Args:
+            user_id: ID of the user
+            endpoint: Filter by endpoint
+            start_date: Filter entries after this date
+            end_date: Filter entries before this date
+            session_id: Filter by specific session ID
+            storage_type: Filter by request/response type
+            metadata_filters: Additional metadata filters
+            page: Page number for session pagination
+            page_size: Number of sessions per page
+            entries_per_session: Maximum number of entries to return per session
+        """
         filtered_entries = self._filter_storage_entries(
             user_id=user_id,
             endpoint=endpoint,
@@ -199,46 +207,57 @@ class StorageService:
             metadata_filters=metadata_filters
         )
 
-        # Group by session
-        sessions = {}
+        # Group entries by session_id and remove duplicates
+        session_groups = {}
         for entry in filtered_entries:
             session_id = entry.storage_metadata.get('session_id')
             if not session_id:
                 continue
+            if session_id not in session_groups:
+                # Use dict to prevent duplicates
+                session_groups[session_id] = {}
+            # Use ID as key to prevent duplicates
+            session_groups[session_id][entry.id] = entry
 
-            if session_id not in sessions:
-                sessions[session_id] = {
-                    'session_id': session_id,
-                    'created_at': entry.created_at,
-                    'last_activity': entry.created_at,
-                    'endpoints': {entry.endpoint},
-                    'entries': []
-                }
+        sessions = []
+        for session_id, entries_dict in session_groups.items():
+            entries = list(entries_dict.values())  # Convert back to list
+            entries.sort(key=lambda x: x.created_at,
+                         reverse=True)  # Sort by created_at
 
-            sessions[session_id]['last_activity'] = max(
-                sessions[session_id]['last_activity'],
-                entry.created_at
+            total_entries = len(entries)
+            shown_entries = entries[:entries_per_session] if entries_per_session else entries
+
+            session = SessionWithEntriesResponse(
+                session_id=session_id,
+                user_id=user_id,
+                created_at=min(e.created_at for e in entries),
+                last_activity=max(e.created_at for e in entries),
+                endpoints=list({e.endpoint for e in entries}),
+                total_entries=total_entries,
+                entries_shown=len(shown_entries),
+                has_more_entries=entries_per_session and total_entries > entries_per_session,
+                entries=[StorageEntryResponse.from_orm(
+                    e) for e in shown_entries]
             )
-            sessions[session_id]['entries'].append(
-                StorageEntryResponse.from_orm(entry)
-            )
+            sessions.append(session)
 
-        # Convert to list and sort
-        session_list = list(sessions.values())
-        for session in session_list:
-            session['endpoints'] = list(session['endpoints'])
-            session['entries'].sort(key=lambda x: x.created_at, reverse=True)
+        # Sort sessions by last activity
+        sessions.sort(key=lambda x: x.last_activity, reverse=True)
 
-        # Sort sessions by last_activity in reverse order
-        session_list.sort(key=lambda x: x['last_activity'], reverse=True)
+        # Paginate sessions
+        total_sessions = len(sessions)
+        paginated_sessions = sessions[(page-1)*page_size:page*page_size]
 
-        return {
-            'sessions': session_list[(page-1)*page_size:page*page_size],
-            'total': len(session_list),
-            'page': page,
-            'page_size': page_size,
-            'has_more': len(session_list) > page * page_size
-        }
+        response = DetailedSessionListResponse(
+            sessions=paginated_sessions,
+            total=total_sessions,
+            page=page,
+            page_size=page_size,
+            has_more=total_sessions > page * page_size
+        )
+
+        return response.model_dump()
 
     def _filter_storage_entries(
         self,
@@ -404,7 +423,7 @@ class StorageService:
         page: int = 1,
         page_size: int = 20
     ) -> Dict[str, Any]:
-        """List user's storage sessions (simplified version)"""
+        """List user's storage sessions without entries."""
         metadata_filters = {'session_id': session_id} if session_id else None
         filtered_entries = self._filter_storage_entries(
             user_id=user_id,
@@ -414,62 +433,45 @@ class StorageService:
             metadata_filters=metadata_filters
         )
 
-        # Group by session
-        sessions = {}
+        # Group entries by session_id
+        session_groups = {}
         for entry in filtered_entries:
             session_id = entry.storage_metadata.get('session_id')
             if not session_id:
                 continue
+            if session_id not in session_groups:
+                session_groups[session_id] = []
+            session_groups[session_id].append(entry)
 
-            if session_id not in sessions:
-                sessions[session_id] = {
-                    'session_id': session_id,
-                    'user_id': user_id,
-                    'created_at': entry.created_at,
-                    'last_activity': entry.created_at,
-                    'endpoints': set()  # Initialize as set for efficient unique additions
-                }
-
-            sessions[session_id]['last_activity'] = max(
-                sessions[session_id]['last_activity'],
-                entry.created_at
+        # Create session responses
+        sessions = []
+        for session_id, entries in session_groups.items():
+            session = SessionListItemResponse(
+                session_id=session_id,
+                user_id=user_id,
+                created_at=min(e.created_at for e in entries),
+                last_activity=max(e.created_at for e in entries),
+                endpoints=list({e.endpoint for e in entries}),
+                total_entries=len(entries),
+                entries_shown=0,  # No entries in simple list
+                has_more_entries=True if entries else False
             )
-            sessions[session_id]['endpoints'].add(entry.endpoint)
+            sessions.append(session)
 
-        # Convert to list and sort by last_activity
-        session_list = []
-        for session in sessions.values():
-            # Convert set to list here before adding to response
-            session['endpoints'] = list(session['endpoints'])
-            session_list.append(session)
+        # Sort and paginate
+        sessions.sort(key=lambda x: x.last_activity, reverse=True)
+        total = len(sessions)
+        paginated_sessions = sessions[(page-1)*page_size:page*page_size]
 
-        session_list.sort(key=lambda x: x['last_activity'], reverse=True)
+        response = SimpleSessionListResponse(
+            sessions=paginated_sessions,
+            total=total,
+            page=page,
+            page_size=page_size,
+            has_more=total > page * page_size
+        )
 
-        # Add warning if no sessions found
-        if not session_list:
-            warning_msg = "No sessions found"
-            if start_date or end_date:
-                warning_msg += " in specified date range"
-            WarningCollector.add_warning(
-                message=warning_msg,
-                code=WarningCode.NO_RESULTS_FOUND,
-                severity=WarningSeverity.MEDIUM,
-                priority=4
-            )
-
-        # Paginate
-        total = len(session_list)
-        start_idx = (page - 1) * page_size
-        end_idx = start_idx + page_size
-        paginated_sessions = session_list[start_idx:end_idx]
-
-        return {
-            'sessions': paginated_sessions,
-            'total': total,
-            'page': page,
-            'page_size': page_size,
-            'has_more': total > page * page_size
-        }
+        return response.model_dump()
 
     def _normalize_endpoint(self, endpoint: str) -> List[str]:
         """Normalize endpoint to try different variations"""

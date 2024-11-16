@@ -27,6 +27,7 @@ class SessionQueryRequest(BaseRequestModel):
     metadata_filters: Dict[str, Any] = Field(default_factory=dict)
     page: int = Field(default=1, ge=1)
     page_size: int = Field(default=20, ge=1, le=100)
+    entries_per_session: Optional[int] = Field(default=20, ge=1)
 
 
 class StorageDeleteRequest(BaseRequestModel):
