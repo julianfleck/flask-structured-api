@@ -3,12 +3,18 @@ from typing import Optional, Dict, Any, List
 from sqlmodel import Session, select, func, or_
 from sqlalchemy.types import String
 import json
-from app.models.core.storage import APIStorage
-from app.models.enums import StorageType
-from app.models.responses.storage import StorageEntryResponse, StorageListResponse, SimpleSessionListResponse, SessionListItemResponse, DetailedSessionListResponse, SessionWithEntriesResponse
-from app.core.exceptions import APIError
-from app.core.warnings import WarningCollector, WarningCode, WarningSeverity
 from flask import current_app
+
+from app.core.models.domain.storage import APIStorage
+from app.core.enums import StorageType
+from app.core.models.responses.storage import (
+    StorageEntryResponse, StorageListResponse,
+    SimpleSessionListResponse, SessionListItemResponse,
+    DetailedSessionListResponse, SessionWithEntriesResponse
+)
+from app.core.exceptions import APIError
+from app.core.warnings import WarningCollector
+from app.core.enums import WarningCode, WarningSeverity
 from app.core.session import get_or_create_session
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import cast
@@ -421,7 +427,8 @@ class StorageService:
         session_id: Optional[str] = None,
         storage_type: Optional[StorageType] = None,
         page: int = 1,
-        page_size: int = 20
+        page_size: int = 20,
+        entries_per_session: Optional[int] = None
     ) -> Dict[str, Any]:
         """List user's storage sessions without entries."""
         metadata_filters = {'session_id': session_id} if session_id else None
