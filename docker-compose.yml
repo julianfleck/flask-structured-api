@@ -19,6 +19,7 @@ services:
       - DEBUGPY_FLAG=--debugpy
     volumes:
       - .:/app
+      - backup_data:/backups
     entrypoint: ["/app/docker/entrypoint.sh"]
     depends_on:
       - db

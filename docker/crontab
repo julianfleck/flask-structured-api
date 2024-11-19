@@ -1,7 +1,12 @@
-POSTGRES_HOST=db
-POSTGRES_USER=user
-POSTGRES_PASSWORD=password
-POSTGRES_DB=api
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 PYTHONPATH=/app
 
-0 0 * * * python -m app.scripts.backup_db >> /var/log/cron.log 2>&1 
+# Export database credentials
+export POSTGRES_HOST=db
+export POSTGRES_USER=user
+export POSTGRES_PASSWORD=password
+export POSTGRES_DB=api
+
+# Run backup daily at midnight
+0 0 * * * mkdir -p /backups && python -m app.core.scripts.backup_db >> /var/log/cron.log 2>&1

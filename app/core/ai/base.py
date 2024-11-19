@@ -2,8 +2,8 @@
 from typing import Protocol, Type, TypeVar, Optional, Dict, Any, List
 from datetime import datetime
 from pydantic import BaseModel, Field
-from app.models.core.ai import AICompletionRequest
-from app.models.responses.ai import AIResponse
+from app.core.ai.models import AICompletionRequest
+from app.core.models.responses.ai import AIResponse
 
 T = TypeVar('T', bound=BaseModel)
 

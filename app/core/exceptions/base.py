@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from app.core.warnings import WarningCollector
-from app.models.enums import WarningCode, WarningSeverity
+from app.core.enums import WarningCode, WarningSeverity
 
 
 class APIError(Exception):

@@ -4,8 +4,8 @@ from app.core.config import settings
 import os
 import socket
 from app.core.handlers import register_error_handlers
-from app.api.v1 import api_v1
-from app.models import (
+from app.api.core.v1 import api_v1
+from app.core.models import (
     User,
     APIKey,
     CoreModel,
@@ -80,16 +80,16 @@ def create_app() -> Flask:
     register_error_handlers(app)
 
     # Register blueprints
-    from app.api.root import root_bp
+    from app.api.core.root import root_bp
     app.register_blueprint(root_bp)
     app.register_blueprint(api_v1)
 
-    # Register hello blueprint
-    from app.api.v1.endpoints.hello import hello_bp
+    # Register custom blueprints
+    from app.api.custom.v1.hello import hello_bp
     app.register_blueprint(hello_bp)
 
     # Register CLI commands
-    from app.cli import init_cli
+    from app.core.cli import init_cli
     init_cli(app)
 
     # Register middleware
