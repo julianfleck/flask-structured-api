@@ -7,5 +7,5 @@ class AIResponse(BaseResponseModel):
     model: str
     response: str
     tokens_used: int
-    metadata: Optional[Dict[str, Any]] = None
+    ai_metadata: dict
     raw_response: Optional[Dict[str, Any]] = None
