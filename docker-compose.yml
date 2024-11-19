@@ -17,6 +17,7 @@ services:
       - API_HOST=${API_HOST}
       - API_PORT=${API_PORT}
       - DEBUGPY_FLAG=--debugpy
+      - PYTHONARGS=-Xfrozen_modules=off
     volumes:
       - .:/app
       - backup_data:/backups
