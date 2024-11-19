@@ -1,6 +1,6 @@
 # app/models/requests/auth.py
 from pydantic import EmailStr, Field
-from app.models.core.base import BaseRequestModel
+from app.core.models.requests.base import BaseRequestModel
 from typing import List, Optional
 
 

@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from app.models.core.base import BaseResponseModel
-from app.models.enums import StorageType
+from app.core.models.responses.base_model import BaseResponseModel
+from app.core.enums import StorageType
 from pydantic import Field
 import json
 from flask import current_app

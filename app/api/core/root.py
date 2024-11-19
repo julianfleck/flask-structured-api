@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, g
-from app.models.responses import SuccessResponse
-from app.utils.routes import get_endpoints_list
+from app.core.models.responses import SuccessResponse
+from app.core.utils.routes import get_endpoints_list
 from app.core.auth import optional_auth
 
 root_bp = Blueprint('root', __name__)

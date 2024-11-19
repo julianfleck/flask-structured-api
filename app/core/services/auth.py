@@ -7,13 +7,13 @@ import secrets
 import hashlib
 
 from app.core.exceptions.auth import InvalidCredentialsError, AuthenticationError
-from app.models.user import User
-from app.models.enums import UserRole
-from app.models.requests.auth import RegisterRequest, LoginRequest, APIKeyRequest
-from app.models.responses.auth import TokenResponse, UserResponse
+from app.core.models.domain.user import User
+from app.core.enums import UserRole
+from app.core.models.requests.auth import RegisterRequest, LoginRequest, APIKeyRequest
+from app.core.models.responses.auth import TokenResponse, UserResponse
 from app.core.config import settings
 from app.core.exceptions import APIError
-from app.models.api_key import APIKey
+from app.core.models.domain.api_key import APIKey
 
 
 class Auth:

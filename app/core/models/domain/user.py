@@ -3,8 +3,8 @@ from sqlmodel import Field, Relationship
 from datetime import datetime
 from sqlalchemy import JSON
 
-from app.models.core.base import CoreModel
-from app.models.enums import UserRole
+from app.core.models.domain.base import CoreModel
+from app.core.enums import UserRole
 
 
 class User(CoreModel, table=True):
@@ -25,4 +25,6 @@ class User(CoreModel, table=True):
     preferences: Dict[str, Any] = Field(default_factory=dict, sa_type=JSON)
     permissions: List[str] = Field(default_factory=list, sa_type=JSON)
 
+    # Relationships using forward references
+    api_keys: List["APIKey"] = Relationship(back_populates="user")
     storage_entries: List["APIStorage"] = Relationship(back_populates="user")

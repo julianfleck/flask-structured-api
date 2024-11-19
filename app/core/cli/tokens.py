@@ -1,7 +1,9 @@
 import click
 from flask.cli import AppGroup
-from app.services.auth import AuthService
+
 from app.core.db import get_session
+from app.core.models.domain import User
+from app.core.services.auth import AuthService
 
 tokens_cli = AppGroup('tokens', help='JWT token management commands')
 

@@ -1,4 +1,4 @@
-from app.models.core.base import BaseResponseModel
+from app.core.models.responses.base_model import BaseResponseModel
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pydantic import Field

@@ -2,9 +2,11 @@ from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 from typing import Optional, Dict, Any
 from sqlalchemy import JSON, ForeignKey
-from app.models.core.base import CoreModel
-from app.models.user import User
-from app.models.enums import StorageType
+from app.core.models.domain.base import CoreModel
+from app.core.models.domain.user import User
+from app.core.enums import StorageType
+import json
+import zlib
 
 
 class StorageBase(CoreModel):

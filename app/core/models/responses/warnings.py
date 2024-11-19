@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from app.models.enums import WarningCode, WarningSeverity
+from app.core.enums import WarningCode, WarningSeverity
 
 
 class ResponseWarning(BaseModel):
-    """Structured warning format for responses"""
+    """Warning model for API responses"""
     code: WarningCode
     message: str
-    severity: WarningSeverity
+    severity: WarningSeverity = WarningSeverity.LOW

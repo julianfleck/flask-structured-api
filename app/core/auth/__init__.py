@@ -7,16 +7,17 @@ from flask import request, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.core.exceptions import APIError
-from app.models.responses.auth import TokenResponse
+from app.core.models.responses.auth import TokenResponse
 from app.core.config import settings
-from app.models.enums import UserRole
+from app.core.enums import UserRole
 from app.core.db import get_session
-from app.services.auth import AuthService, Auth
+from app.core.services.auth import AuthService, Auth
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from app.models.user import User  # Import User model for type checking only
+    # Import User model for type checking only
+    from app.core.models.domain import User
 
 
 def has_required_roles(user: 'User', required_roles: Union[List[str], str]) -> bool:

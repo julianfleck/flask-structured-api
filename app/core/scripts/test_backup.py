@@ -1,5 +1,5 @@
-from app.scripts.backup_db import backup_database, cleanup_backups
-from app.scripts.generate_crontab import generate_crontab
+from app.core.scripts.backup_db import backup_database, cleanup_backups
+from app.core.scripts.generate_crontab import generate_crontab
 from pathlib import Path
 import os
 

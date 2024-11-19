@@ -21,3 +21,13 @@ def get_or_create_session(user_id: int, timeout_minutes: int = 30) -> str:
     except APIError:
         # Fallback: generate new session ID if Redis is unavailable
         return str(uuid4())
+
+
+def clear_session(user_id: int) -> bool:
+    """Clear user's session data"""
+    try:
+        redis = get_redis()
+        session_key = f"storage_session:{user_id}"
+        return bool(redis.delete(session_key))
+    except APIError:
+        return False

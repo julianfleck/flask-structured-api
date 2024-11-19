@@ -1,8 +1,8 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 from pydantic import Field, field_validator
-from app.models.core.base import BaseRequestModel
-from app.models.enums import StorageType
+from app.core.models.requests.base import BaseRequestModel
+from app.core.enums import StorageType
 
 
 class StorageQueryRequest(BaseRequestModel):

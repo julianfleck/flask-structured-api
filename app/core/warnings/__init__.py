@@ -1,8 +1,9 @@
 # app/core/warnings.py
+from typing import List, Optional
 from dataclasses import dataclass, field
-from typing import List
 from datetime import datetime
-from app.models.enums import WarningCode, WarningSeverity
+
+from app.core.enums import WarningCode, WarningSeverity
 
 
 @dataclass

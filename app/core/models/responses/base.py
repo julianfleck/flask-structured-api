@@ -1,8 +1,8 @@
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel
-from app.models.errors import ErrorDetail
+from app.core.models.errors import ErrorDetail
 from app.core.warnings import WarningCollector
-from app.models.responses.warnings import ResponseWarning
+from app.core.models.responses.warnings import ResponseWarning
 
 
 class APIResponse(BaseModel):

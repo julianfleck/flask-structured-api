@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 from sqlalchemy import JSON
-from app.models.core.base import CoreModel
+from app.core.models.domain.base import CoreModel
 
 
 class APIKey(CoreModel, table=True):
@@ -16,3 +16,6 @@ class APIKey(CoreModel, table=True):
     expires_at: Optional[datetime] = Field(default=None)
     is_active: bool = Field(default=True)
     scopes: List[str] = Field(default_factory=list, sa_type=JSON)
+
+    # Add relationship
+    user: Optional["User"] = Relationship(back_populates="api_keys")

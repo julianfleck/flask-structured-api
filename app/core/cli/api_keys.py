@@ -1,8 +1,10 @@
 import click
 from flask.cli import AppGroup
-from app.services.auth import AuthService
-from app.core.db import get_session
 from datetime import datetime, timedelta
+
+from app.core.db import get_session
+from app.core.models.domain import User, APIKey
+from app.core.services.auth import AuthService
 
 api_keys_cli = AppGroup('api-keys', help='API key management commands')
 

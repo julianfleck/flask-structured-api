@@ -1,7 +1,10 @@
-import uuid
-from flask import g, request
+from .context import setup_request_context
+from .logging import log_request, log_response
+from .decorators import log_function_call
 
-
-def setup_request_context():
-    """Setup request context with unique ID and other request-scoped data"""
-    g.request_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
+__all__ = [
+    'setup_request_context',
+    'log_request',
+    'log_response',
+    'log_function_call'
+]

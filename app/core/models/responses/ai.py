@@ -1,13 +1,11 @@
-from typing import Dict, Any, List
-from datetime import datetime
-from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional
+from app.core.models.responses.base_model import BaseResponseModel
 
 
-class AIResponse(BaseModel):
-    """Standardized AI response format"""
-    content: str
-    usage: Dict[str, int]
+class AIResponse(BaseResponseModel):
+    """Response model for AI-related endpoints"""
     model: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    warnings: List[str] = Field(default_factory=list)
+    response: str
+    tokens_used: int
+    metadata: Optional[Dict[str, Any]] = None
+    raw_response: Optional[Dict[str, Any]] = None

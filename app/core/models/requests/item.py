@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from pydantic import Field
-from app.models.core.base import BaseRequestModel
+from app.core.models.requests.base import BaseRequestModel
 
 
 class CreateItemRequest(BaseRequestModel):

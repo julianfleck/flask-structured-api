@@ -1,8 +1,8 @@
 from flask import Blueprint, request, g
-from app.models.responses import SuccessResponse
-from app.services.auth import AuthService
-from app.models.requests.auth import RegisterRequest, LoginRequest, RefreshTokenRequest, APIKeyRequest
-from app.models.responses.auth import TokenResponse, UserResponse
+from app.core.models.responses import SuccessResponse
+from app.core.services.auth import AuthService
+from app.core.models.requests.auth import RegisterRequest, LoginRequest, RefreshTokenRequest, APIKeyRequest
+from app.core.models.responses.auth import TokenResponse, UserResponse
 from app.core.db import get_session
 from app.core.auth import require_auth
 from app.core.exceptions import APIError
