@@ -4,6 +4,33 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 
 # [Unreleased]
 
+## [0.2.3] - 2024-11-19
+
+### Fixed
+- Automated database backup system with Docker integration
+  - Daily backups with configurable retention policy
+  - Backup compression support with gzip
+  - CLI commands for backup management and listing
+  - Initial backup on container startup
+  - Backup volume persistence across container restarts
+  - Backup cleanup with daily/weekly/monthly retention
+- Storage session listing endpoint parameter validation
+- Backup directory permissions in Docker containers
+- Database connection handling during backup operations
+- Environment variable consistency across containers
+
+### Changed
+- Improved backup system reliability with proper error handling
+- Enhanced backup file naming with timestamps
+- Standardized database credentials across services
+- Optimized backup compression settings
+- Improved backup logging with emojis for better visibility
+
+### Security
+- Secured database credentials in backup container
+- Protected backup directory with proper permissions
+- Isolated backup operations in dedicated container
+
 
 ## [0.2.2] - 2024-11-15
 
