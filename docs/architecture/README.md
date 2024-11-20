@@ -2,6 +2,32 @@
 
 This document describes the core architecture of the Flask API Boilerplate, explaining how different components work together to provide a robust, scalable API framework with AI capabilities.
 
+## Directory Structure
+
+```
+app/
+├── api/ # API endpoints
+│ ├── core/ # Core API functionality
+│ └── custom/ # Custom API extensions
+├── core/ # Core framework components
+│ ├── ai/ # AI integration
+│ ├── auth/ # Authentication
+│ ├── cache/ # Caching
+│ ├── config/ # Configuration
+│ ├── db/ # Database
+│ ├── handlers/ # Error handlers
+│ ├── middleware/ # Middleware
+│ ├── models/ # Data models
+│ ├── services/ # Business logic
+│ └── utils/ # Utilities
+├── custom/ # Custom extensions
+│ ├── models/ # Custom models
+│ ├── services/ # Custom services
+│ └── utils/ # Custom utilities
+├── extensions/ # Flask extensions
+└── main.py # Application entry
+```
+
 ## Core Concepts
 
 ### Model-First Design
@@ -356,21 +382,6 @@ Benefits of this approach:
 -   Consistent error handling
 -   Detailed error context
 -   Easy error tracking and analytics
-
-## Directory Structure
-
-```
-app/
-├── api/                 # API endpoints
-│   └── v1/             # API version 1
-├── core/               # Core functionality
-│   ├── ai/            # AI integration
-│   ├── auth/          # Authentication
-│   └── cache/         # Caching
-├── models/            # Database models
-├── schemas/           # Pydantic schemas
-└── services/          # Business logic
-```
 
 ## Request Flow
 

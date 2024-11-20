@@ -41,6 +41,39 @@ pip install -r requirements-dev.txt
 pre-commit install
 ```
 
+## Code Organization
+
+### Core vs Custom Code
+
+- `app/core/`: Framework components (don't modify)
+- `app/custom/`: Your custom implementations
+- `app/api/core/`: Core API endpoints
+- `app/api/custom/`: Your custom endpoints
+
+### Adding Custom Endpoints
+
+1. Create new endpoint in `app/api/custom/v1/`:
+
+```python
+# app/api/custom/v1/hello.py
+from flask import Blueprint
+from app.core.auth import require_auth
+bp = Blueprint('hello', name)
+@bp.route('/hello')
+@require_auth
+def hello():
+    return {"message": "Hello, World!"}
+```
+
+1. Register the endpoint in your custom module:
+
+```python
+# app/custom/init.py
+def init_custom_routes(app):
+    from app.api.custom.v1.hello import bp
+    app.register_blueprint(bp, url_prefix='/api/v1')
+```
+
 ## Code Style
 
 We use several tools to maintain code quality:

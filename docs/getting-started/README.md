@@ -164,12 +164,12 @@ AI_API_KEY=your-api-key-here
 
    Save any returned tokens or API keys securely - they won't be shown again!
 
-## Your First Endpoint
+## Creating Your First Endpoint
 
-1. Create a new file `app/api/v1/endpoints/hello.py`:
+1. Create a new endpoint file in `app/api/custom/v1/hello.py`:
    ```python
    from flask import Blueprint
-   from app.models.responses import SuccessResponse
+   from app.core.models.responses import SuccessResponse
    from app.core.auth import require_auth
 
    hello_bp = Blueprint('hello', __name__)
@@ -183,10 +183,10 @@ AI_API_KEY=your-api-key-here
        ).dict()
    ```
 
-2. Register the blueprint in `app/api/v1/__init__.py`:
+2. Register the blueprint in `app/custom/init.py`:
    ```python
    from flask import Blueprint
-   from app.api.v1.endpoints.hello import hello_bp
+   from app.api.custom.v1.hello import hello_bp
 
    api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
    api_v1.register_blueprint(hello_bp, url_prefix='/hello')

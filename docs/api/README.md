@@ -219,13 +219,26 @@ X-API-Deprecated: false
 
 ### Core API
 - [Authentication](auth/README.md) - User authentication and management
-  - Login
-  - Token refresh
-  - User registration
-- [Core Endpoints](core/README.md) - Core functionality
-  - Health check
-  - Version info
-  - Status
+  - `POST` `/v1/auth/register` - User registration
+  - `POST` `/v1/auth/login` - Login
+  - `POST` `/v1/auth/token/refresh` - Token refresh
+  - `GET` `/v1/auth/me` - Check authentication
+  - `POST` `/v1/auth/logout` - Logout
+  - `POST` `/v1/auth/token/revoke` - Revoke token
+- Version and Status
+  - `GET` `/v1/health` - Health check
+  - `GET` `/v1/version` - Version info
+  - `GET` `/v1/status` - Status
+- [Storage](storage/README.md) - Data storage
+  - `GET` `/v1/storage/sessions` - List sessions
+  - `GET` `/v1/storage/session/create` - Create session
+  - `POST` `/v1/storage/session/list` - List sessions (paginated with metadata filters)
+  - `GET` `/v1/storage/session/<session_id>` - Get session data by ID
+  - `POST` `/v1/storage/session/query` - Get session data (paginated with metadata filters)
+  - `POST` `/v1/storage/upload` - Upload file
+  - `GET` `/v1/storage/download` - Download file
+  - `DELETE` `/v1/storage/delete` - Delete file
+
 
 ### AI Endpoints
 - [AI Integration](ai/README.md) - AI-powered endpoints
