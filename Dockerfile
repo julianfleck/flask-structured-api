@@ -2,11 +2,12 @@
 FROM python:3.11-slim as base
 
 # Add build argument for environment
-ARG ENVIRONMENT=production
+ARG ENVIRONMENT
 
 # Install common required packages
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    redis-tools \
     cron \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
@@ -14,15 +15,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first
-COPY requirements.txt requirements-dev.txt ./
-
-# Install base dependencies
-RUN pip install -r requirements.txt
-
-# Development dependencies if needed
-RUN if [ "$ENVIRONMENT" = "development" ] ; then \
-        echo "🔧 Installing development dependencies..." && \
-        pip install -r requirements-dev.txt ; \
+COPY requirements/ ./requirements/
+RUN pip install -r requirements/base.txt && \
+    if [ "$ENVIRONMENT" = "development" ] ; then \
+        pip install -r requirements/dev.txt -r requirements/test.txt; \
     fi
 
 # API image
@@ -35,30 +31,24 @@ RUN mkdir -p /var/log && \
     touch /var/log/flask.log /var/log/flask.err.log && \
     chmod -R 755 /var/log && \
     mkdir -p /etc/supervisor/conf.d && \
-    cp /app/docker/supervisord.conf /etc/supervisor/conf.d/
+    cp docker/api/supervisord.conf /etc/supervisor/conf.d/
 
-# Verify debugpy installation for development
-RUN if [ "$ENVIRONMENT" = "development" ] ; then \
-        echo "🔍 Verifying debugpy installation..." && \
-        pip list | grep debugpy || echo "❌ debugpy not found!" ; \
-    fi
-
-COPY docker/entrypoint.sh /app/docker/
-RUN chmod +x /app/docker/entrypoint.sh
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+COPY docker/api/entrypoint.sh /app/docker/
+RUN chmod +x /app/docker/api/entrypoint.sh
+ENTRYPOINT ["/app/docker/api/entrypoint.sh"]
 
 # Backup image
 FROM base as backup
 # Only copy what's needed for backups
-COPY app/scripts/backup_db.py /app/app/scripts/
-COPY app/core/config.py /app/app/core/
-COPY docker/crontab /app/docker/
+COPY src/flask_structured_api/core/scripts/backup_db.py /app/src/flask_structured_api/core/scripts/
+COPY src/flask_structured_api/core/config /app/src/flask_structured_api/core/config/
+COPY docker/backup/crontab /app/docker/backup/
 
 # Setup backup directories
 RUN mkdir -p /backups /var/log && \
     touch /var/log/cron.log && \
     chmod -R 755 /backups /var/log
 
-COPY docker/entrypoint.backup.sh /app/docker/
-RUN chmod +x /app/docker/entrypoint.backup.sh
-ENTRYPOINT ["/app/docker/entrypoint.backup.sh"]
+COPY docker/backup/entrypoint.sh /app/docker/backup/
+RUN chmod +x /app/docker/backup/entrypoint.sh
+ENTRYPOINT ["/app/docker/backup/entrypoint.sh"]

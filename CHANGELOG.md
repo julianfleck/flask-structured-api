@@ -4,6 +4,30 @@ All notable changes to the Flask API Boilerplate will be documented in this file
 
 # [Unreleased]
 
+## [0.2.4] - 2024-11-21
+
+### Added
+- Package setup configuration with setuptools
+- Centralized script registry under core/scripts
+- Development-specific requirements separation
+
+### Changed
+- Renamed project from flask-ai-api-boilerplate to flask-structured-api
+- Restructured project layout for PyPI packaging under src/
+- Reorganized blueprints with clearer core/custom separation
+- Updated import paths to use new package name
+- Split requirements into base and development dependencies
+- Enhanced version management with centralized settings
+- Improved blueprint registration system
+- Updated documentation to reflect new package structure
+
+### Fixed
+- Import path consistency across modules
+- Blueprint registration order
+- Development environment detection
+- Debug port conflicts with auto-selection
+
+
 ## [0.2.3] - 2024-11-19
 
 ### Fixed
