@@ -16,8 +16,8 @@ Before you begin, ensure you have:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/julianfleck/flask-ai-api-boilerplate.git
-   cd flask-ai-api-boilerplate
+   git clone https://github.com/julianfleck/flask-structured-api.git
+   cd flask-structured-api
    ```
 
 2. Copy and configure environment variables:
@@ -33,20 +33,20 @@ Before you begin, ensure you have:
 
 4. Run database migrations:
    ```bash
-   docker-compose exec api flask db upgrade
+   docker-compose --workdir /app/src exec api flask db upgrade
    ```
 
 5. Create an admin user:
    ```bash
-   docker-compose exec api flask users create-admin
+   docker-compose --workdir /app/src exec api flask users create-admin
    ```
 
 ### Option 2: Local Development
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/julianfleck/flask-ai-api-boilerplate.git
-   cd flask-ai-api-boilerplate
+   git clone https://github.com/julianfleck/flask-structured-api.git
+   cd flask-structured-api
    ```
 
 2. Create and activate virtual environment:
@@ -228,5 +228,5 @@ AI_API_KEY=your-api-key-here
 ## Getting Help
 
 - Check our [Troubleshooting Guide](../development/troubleshooting.md)
-- Open an [Issue](https://github.com/julianfleck/flask-ai-api-boilerplate/issues)
+- Open an [Issue](https://github.com/julianfleck/flask-structured-api/issues)
 - See [Examples](examples/README.md) for common use cases

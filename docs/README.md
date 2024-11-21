@@ -82,15 +82,15 @@ CELERY_TASK_DEFAULT_QUEUE=default
 
 ## 🔗 Additional Resources
 
-- [GitHub Repository](https://github.com/julianfleck/flask-ai-api-boilerplate)
-- [Issue Tracker](https://github.com/julianfleck/flask-ai-api-boilerplate/issues)
+- [GitHub Repository](https://github.com/julianfleck/flask-structured-api)
+- [Issue Tracker](https://github.com/julianfleck/flask-structured-api/issues)
 - [Changelog](../CHANGELOG.md)
 
 ## ❓ Getting Help
 
 - See [examples](getting-started/examples/) for common use cases
 - Review [Troubleshooting](development/README.md#troubleshooting)
-- Open an [issue](https://github.com/julianfleck/flask-ai-api-boilerplate/issues) for bugs
+- Open an [issue](https://github.com/julianfleck/flask-structured-api/issues) for bugs
 
 ## 📝 License
 

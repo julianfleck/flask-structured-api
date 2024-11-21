@@ -5,7 +5,7 @@ This document describes the core architecture of the Flask API Boilerplate, expl
 ## Directory Structure
 
 ```
-app/
+src/flask_structured_api/
 ├── api/ # API endpoints
 │ ├── core/ # Core API functionality
 │ └── custom/ # Custom API extensions

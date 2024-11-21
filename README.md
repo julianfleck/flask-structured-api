@@ -1,189 +1,144 @@
-# Flask API Boilerplate with AI Integration
+# Flask Structured API
 
-A production-ready Flask API boilerplate using SQLModel, PostgreSQL, Redis, and LLM integrations. Built for developers who need a robust foundation for building AI-powered APIs while following best practices.
+A production-ready Flask API framework with built-in storage, authentication, and AI capabilities. Designed for developers who need a robust foundation for building scalable APIs while following best practices.
 
-## Author
-[julianfleck](https://github.com/julianfleck)
+## ✨ Core Features
 
-## ✨ Features
+### 🏗️ Model-First Architecture
+- SQLModel + Pydantic for type-safe database operations
+- Comprehensive validation with detailed error messages
+- Clear separation between core and custom components
+- Standardized response formats
 
-- 🏗️ **Model-First Architecture**
-  - Unified SQLModel + Pydantic models
-  - Type-safe database operations
-  - Clear separation of concerns
-- 🤖 **AI Integration**
-  - Flexible LLM provider interface
-  - Response validation
-  - Structured output parsing
-  - Comprehensive error handling
-- 🔐 **Security**
-  - Role-based access control
-  - JWT authentication
-  - Request validation
-  - Rate limiting
-- 📦 **Production Ready**
-  - Docker configuration
-  - Monitoring setup
-  - Auto-generated OpenAPI docs
-  - Performance optimization
+### 🔐 Authentication & Security
+- JWT token-based authentication
+- API key management with scoping
+- Role-based access control (RBAC)
+- Request validation and sanitization
+- Hash-based secure storage
+
+### 📦 Storage System
+- On-demand request/response storage
+- Session-based data organization
+- Compression for large payloads
+- TTL-based expiration
+- Flexible querying with metadata filters
+
+### 🤖 AI Integration
+- Provider-agnostic interface
+- Response validation
+- Automatic retry mechanisms
+- Error handling with fallbacks
+
+### 🔧 Developer Experience
+- OpenAPI/Swagger documentation
+- Remote debugging support
+- Environment-based configuration
+- Comprehensive error handling
+- Warning collection system
 
 ## 🚀 Quick Start
 
-1. Clone the repository:
+### Using Docker (Recommended)
 ```bash
-git clone https://github.com/julianfleck/flask-ai-api-boilerplate.git
-cd flask-ai-api-boilerplate
+# Clone and setup
+git clone https://github.com/julianfleck/flask-structured-api.git
+cd flask-structured-api
+cp .env.example .env
+
+# Start services
+docker-compose up -d
+
+# Initialize database
+docker-compose exec api flask db upgrade
+docker-compose exec api flask users create-admin
 ```
 
-2. Set up environment:
+### Local Development
 ```bash
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/macOS
 # or
 venv\Scripts\activate     # Windows
 
+# Install dependencies
 pip install -r requirements.txt
-cp .env.example .env     # Edit with your settings
-```
+pip install -r requirements-dev.txt
 
-3. Run with Docker:
-```bash
-docker-compose up -d
-docker-compose exec api flask db upgrade
-docker-compose exec api flask users create-admin
-```
-
-## 🏗️ Project Structure
-
-```
-flask-ai-api-boilerplate/
-├── app/ # Application package
-│ ├── api/ # API endpoints
-│ │ └── v1/ # API version 1
-│ ├── core/ # Core functionality
-│ │ └── ai/ # AI service components
-│ ├── models/ # Database & schema models
-│ └── services/ # Business logic
-├── tests/ # Test suite
-├── docker/ # Docker configurations
-├── docs/ # Documentation
-│ ├── architecture/ # Architecture docs
-│ ├── guides/ # User guides
-│ └── development/ # Development docs
-└── CHANGELOG.md # Version history
-```
-
-## 💡 Example Usage
-
-### Basic Endpoint
-```python
-from flask import Blueprint
-from app.models.responses import SuccessResponse
-from app.core.auth import require_auth
-
-example_bp = Blueprint('example', __name__)
-
-@example_bp.route('/', methods=['GET'])
-@require_auth
-def hello_world():
-    return SuccessResponse(
-        message="Hello from Flask API!",
-        data={"version": "1.0.0"}
-    ).dict()
-```
-
-### AI Integration
-```python
-from app.core.ai import AIService
-from app.models.ai import CompletionRequest
-
-@ai_bp.post('/generate')
-@require_auth
-async def generate_content():
-    service = AIService()
-    result = await service.complete(
-        CompletionRequest(
-            prompt="Your prompt here",
-            max_tokens=100
-        )
-    )
-    return SuccessResponse(data=result).dict()
+# Setup pre-commit hooks
+pre-commit install
 ```
 
 ## 📚 Documentation
 
-- Full documentation: `/docs`
-- OpenAPI specification: `/openapi.json`
-- Health check: `/health`
+- [Getting Started Guide](docs/getting-started/README.md)
+- [Architecture Overview](docs/architecture/README.md)
+- [API Documentation](docs/api/README.md)
+- [Development Guide](docs/development/README.md)
+- [Deployment Guide](docs/deployment/README.md)
+
+## 💡 Example Usage
+
+### Protected Endpoint
+```python
+from flask import Blueprint
+from flask_structured_api.core.auth import require_auth
+from flask_structured_api.models.responses import SuccessResponse
+
+bp = Blueprint('example', __name__)
+
+@bp.route('/hello', methods=['GET'])
+@require_auth
+def hello_world():
+    return SuccessResponse(
+        message="Hello, World!",
+        data={"authenticated": True}
+    ).dict()
+```
+
+### Storage Decorator
+```python
+from flask_structured_api.core.storage import store_api_data
+
+@bp.route('/ai/generate', methods=['POST'])
+@require_auth
+@store_api_data()  # Automatically stores request/response
+def generate():
+    result = ai_service.generate(request.json)
+    return SuccessResponse(data=result).dict()
+```
 
 ## ⚙️ Configuration
 
-Key environment variables:
-
+Essential environment variables:
 ```env
-# API Settings
+# Required
 FLASK_APP=flask_structured_api.main:app
-API_DEBUG=True
-
-# Database
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-
-# Security
+REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
 
-# AI Provider (optional)
+# Optional
 AI_PROVIDER=openai
 AI_API_KEY=your-api-key
-```
-
-## 🧪 Testing
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=app
-```
-
-## 🔧 Development
-
-1. Install pre-commit hooks:
-```bash
-pre-commit install
-```
-
-2. Format code:
-```bash
-black app tests
-isort app tests
-```
-
-3. Run type checking:
-```bash
-mypy app
 ```
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Run tests and linting
-4. Submit a pull request
+3. Submit a pull request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+This project is licensed under the Apache License 2.0 - see [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
 
-## 🙏 Acknowledgments
+When using this project, please include the following attribution in your documentation:
 
-- Built with Flask and SQLModel
-- AI integrations powered by LangChain
-- Documentation using OpenAPI
-
+```
+Based on Flask Structured API (https://github.com/julianfleck/flask-structured-api)
+Created by Julian Fleck and contributors
+```

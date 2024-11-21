@@ -366,6 +366,6 @@ http://localhost:5000/docs
 
 ## Getting Help
 
-- [Open an Issue](https://github.com/julianfleck/flask-ai-api-boilerplate/issues)
+- [Open an Issue](https://github.com/julianfleck/flask-structured-api/issues)
 - [View Examples](../getting-started/examples/)
 <!-- - [Join Discord](https://discord.gg/your-server) -->

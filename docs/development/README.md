@@ -22,8 +22,8 @@ Before you begin, ensure you have:
 
 1. Clone and setup:
 ```bash
-git clone https://github.com/julianfleck/flask-ai-api-boilerplate.git
-cd flask-ai-api-boilerplate
+git clone https://github.com/julianfleck/flask-structured-api.git
+cd flask-structured-api
 
 # Create virtual environment
 python -m venv venv
@@ -293,7 +293,7 @@ breakpoint()
     "request": "launch",
     "module": "flask",
     "env": {
-        "FLASK_APP": "app.main:create_app",
+        "FLASK_APP": "src.flask_structured_api.main:create_app",
         "FLASK_ENV": "development"
     },
     "args": [
@@ -308,7 +308,7 @@ breakpoint()
 We use type hints throughout the codebase:
 ```python
 from typing import Optional, List
-from app.models import User
+src.flask_structured_api.models import User
 
 def get_users(active_only: bool = False) -> List[User]:
     """Get list of users"""

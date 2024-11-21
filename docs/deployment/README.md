@@ -28,11 +28,11 @@ AI_API_KEY=your-production-api-key
 3. Deploy with Docker:
 ```bash
 # Build and start services
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose --workdir /app/src -f docker-compose.prod.yml up -d
 
 # Run migrations and create admin
-docker-compose -f docker-compose.prod.yml exec api flask db upgrade
-docker-compose -f docker-compose.prod.yml exec api flask users create-admin
+docker-compose --workdir /app/src -f docker-compose.prod.yml exec api flask db upgrade
+docker-compose --workdir /app/src -f docker-compose.prod.yml exec api flask users create-admin
 ```
 
 ## Local Development
