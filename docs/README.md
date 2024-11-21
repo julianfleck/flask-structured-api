@@ -64,7 +64,7 @@ docker-compose up -d
 
 ```env
 # Required
-FLASK_APP=app.main:create_app
+FLASK_APP=flask_structured_api.main:app
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=your-secret-key-here

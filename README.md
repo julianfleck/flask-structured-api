@@ -122,7 +122,7 @@ Key environment variables:
 
 ```env
 # API Settings
-FLASK_APP=app.main:create_app
+FLASK_APP=flask_structured_api.main:app
 API_DEBUG=True
 
 # Database

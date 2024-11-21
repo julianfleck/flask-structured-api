@@ -8,38 +8,38 @@ services:
       args:
         ENVIRONMENT: ${ENVIRONMENT:-development}
     ports:
-      - "${API_PORT}:${API_PORT}"
-      - "${DEBUGPY_PORT}:${DEBUGPY_PORT}"
-    env_file:
-      - .env
-    environment:
-      - FLASK_APP=${FLASK_APP}
-      - API_HOST=${API_HOST}
-      - API_PORT=${API_PORT}
-      - DEBUGPY_FLAG=--debugpy
-      - PYTHONARGS=-Xfrozen_modules=off
+      - "${API_PORT:-5000}:${API_PORT:-5000}"
+      - "${DEBUGPY_PORT:-5678}:${DEBUGPY_PORT:-5678}"
+    env_file: .env
     volumes:
-      - .:/app
+      - ./src/flask_structured_api:/app/src/flask_structured_api
       - backup_data:/backups
-    entrypoint: ["/app/docker/entrypoint.sh"]
-    depends_on:
-      - db
-      - redis
+    command: >
+      sh -c "if [ \"$${ENVIRONMENT:-development}\" = \"development\" ]; then
+        flask run --host=0.0.0.0 --debug;
+      else
+        gunicorn --workers $${GUNICORN_WORKERS:-4} --bind $${API_HOST:-0.0.0.0}:$${API_PORT:-5000} 'flask_structured_api.main:app';
+      fi"
     networks:
       - app_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   db:
     image: postgres:14-alpine
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=api
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-api}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U user -d api"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -54,13 +54,13 @@ services:
       - backup_data:/backups
     environment:
       - POSTGRES_HOST=db
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=api
-      - BACKUP_SCHEDULE=@daily
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-api}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-@daily}
     networks:
       - app_network
-    entrypoint: ["/app/docker/entrypoint.backup.sh"]
+    entrypoint: ["/app/docker/backup/entrypoint.sh"]
     depends_on:
       db:
         condition: service_healthy

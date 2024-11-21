@@ -86,7 +86,7 @@ Essential environment variables in your `.env` file:
 
 ```env
 # API Settings
-FLASK_APP=app.main:create_app
+FLASK_APP=flask_structured_api.main:app
 FLASK_ENV=development
 API_DEBUG=True
 API_HOST=0.0.0.0
