@@ -5,22 +5,22 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     # API Settings
-    API_NAME: str = "Flask AI API Boilerplate"
-    API_VERSION: str = "1.0.0"  # This will be used for endpoint normalization
-    API_VERSION_PREFIX: str = "v1"
-    API_DEBUG: bool = False
-    API_HOST: str = "${API_HOST}"
-    API_PORT: int = "${API_PORT}"
-    ENVIRONMENT: str = "development"
-    FLASK_APP: str = "app.main:create_app"
-    FLASK_ENV: str = "development"
+    API_NAME: str = Field("Flask Structured API Boilerplate", env="API_NAME")
+    API_VERSION: str = Field("1.0.0", env="API_VERSION")
+    API_VERSION_PREFIX: str = Field("v1", env="API_VERSION_PREFIX")
+    API_DEBUG: bool = Field(False, env="API_DEBUG")
+    API_HOST: str = Field("localhost", env="API_HOST")
+    API_PORT: int = Field(8000, env="API_PORT")
+    ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
+    FLASK_APP: str = Field("app.main:create_app", env="FLASK_APP")
+    FLASK_ENV: str = Field("development", env="FLASK_ENV")
 
     # PostgreSQL Settings
-    POSTGRES_HOST: str = "db"
-    POSTGRES_USER: str = "user"
-    POSTGRES_PASSWORD: str = "password"
-    POSTGRES_DB: str = "api"
-    POSTGRES_PORT: int = 5432
+    POSTGRES_HOST: str = Field("localhost", env="POSTGRES_HOST")
+    POSTGRES_USER: str = Field("user", env="POSTGRES_USER")
+    POSTGRES_PASSWORD: str = Field("password", env="POSTGRES_PASSWORD")
+    POSTGRES_DB: str = Field("api", env="POSTGRES_DB")
+    POSTGRES_PORT: int = Field(5432, env="POSTGRES_PORT")
 
     # Database URL constructed from PostgreSQL settings
     @property
@@ -28,16 +28,16 @@ class Settings(BaseSettings):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # Database
-    DB_POOL_SIZE: int = 20
+    DB_POOL_SIZE: int = Field(20, env="DB_POOL_SIZE")
 
     # Redis
     REDIS_URL: str = Field(..., env="REDIS_URL")
     REDIS_MAX_CONNECTIONS: int = 100
 
     # Security
-    SECRET_KEY: str
-    CORS_ORIGINS: str = "*"
-    ALLOWED_HOSTS: str = "*"
+    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    CORS_ORIGINS: str = Field("*", env="CORS_ORIGINS")
+    ALLOWED_HOSTS: str = Field("*", env="ALLOWED_HOSTS")
 
     # JWT Settings
     JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
