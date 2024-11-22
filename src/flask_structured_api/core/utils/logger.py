@@ -16,7 +16,7 @@ def setup_system_logger(name, log_level=logging.INFO):
         # Console handler
         console_handler = logging.StreamHandler(sys.stdout)
         console_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            '[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         console_handler.setFormatter(console_formatter)
@@ -26,12 +26,12 @@ def setup_system_logger(name, log_level=logging.INFO):
         log_dir = "/var/log/flask-api"
         os.makedirs(log_dir, exist_ok=True)
         file_handler = RotatingFileHandler(
-            f"{log_dir}/{name}.log",
+            "{}/{}.log".format(log_dir, name),
             maxBytes=1024 * 1024,  # 1MB
             backupCount=10
         )
         file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            '[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s'
         )
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
@@ -56,17 +56,17 @@ def log_function(name=None):
             func_name = name or f.__name__
             start_time = time()
 
-            logger.debug("Entering {}".format(func_name))
+            logger.debug("[{}] Starting execution".format(func_name))
             try:
                 result = f(*args, **kwargs)
                 duration = time() - start_time
-                logger.debug("Exiting {} ({:.2f}s)".format(
+                logger.debug("[{}] Completed in {:.2f}s".format(
                     func_name, duration))
                 return result
             except Exception as e:
                 duration = time() - start_time
-                logger.error("Error in {}: {} ({:.2f}s)".format(
-                    func_name, str(e), duration), exc_info=True)
+                logger.error("[{}] Failed in {:.2f}s: {}".format(
+                    func_name, duration, str(e)), exc_info=True)
                 raise
         return wrapper
     return decorator
