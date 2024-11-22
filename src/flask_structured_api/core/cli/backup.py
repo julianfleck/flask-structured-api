@@ -34,3 +34,24 @@ def create_backup():
     """Create a new backup manually"""
     from flask_structured_api.core.scripts.backup_db import backup_database
     backup_database()
+
+
+@backup_cli.command('restore')
+@click.argument('backup_file', required=False)
+@click.option('--force', '-f', is_flag=True, help='Force restore even if database contains data')
+def restore_backup(backup_file=None, force=False):
+    """Restore database from backup file. If no file specified, uses latest backup."""
+    from flask_structured_api.core.scripts.backup_db import restore_database
+
+    if backup_file:
+        backup_path = Path("/backups") / backup_file
+        if not backup_path.exists():
+            click.echo(f"❌ Backup file not found: {backup_file}")
+            return
+    else:
+        click.echo("ℹ️  No backup file specified, using latest backup...")
+
+    if restore_database(backup_file, force=force):
+        click.echo("✅ Database restored successfully")
+    else:
+        click.echo("❌ Database restore failed")

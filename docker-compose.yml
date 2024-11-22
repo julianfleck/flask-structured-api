@@ -13,7 +13,9 @@ services:
     env_file: .env
     volumes:
       - ./src/flask_structured_api:/app/src/flask_structured_api
-      - backup_data:/backups
+      - ./backups:/backups
+      - ./migrations:/app/migrations
+      - backup_data:/backups-volume
     command: >
       sh -c "if [ \"$${ENVIRONMENT:-development}\" = \"development\" ]; then
         flask run --host=0.0.0.0 --debug;
@@ -51,7 +53,8 @@ services:
       context: .
       target: backup
     volumes:
-      - backup_data:/backups
+      - ./backups:/backups
+      - backup_data:/backups-volume
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_USER=${POSTGRES_USER:-user}

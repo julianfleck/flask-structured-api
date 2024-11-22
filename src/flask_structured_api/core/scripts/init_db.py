@@ -1,12 +1,13 @@
-from flask import Flask, current_app
-from flask_migrate import upgrade, init, migrate
 import time
 import os
-from flask_structured_api.core.db import check_database_connection, SQLModel, engine, init_migrations
-from flask_structured_api.core.config import settings
-from flask_structured_api.factory import create_app
-from sqlalchemy import text
 import sys
+from sqlalchemy import text
+from flask_structured_api.core.utils.logger import db_logger
+
+from flask_structured_api.core.db import check_database_connection
+from flask_structured_api.factory import create_app
+from flask_structured_api.core.scripts.backup_db import restore_database, check_tables_empty, drop_all_tables, backup_database
+from flask_structured_api.core.db.migrations import db  # Import shared instance
 
 
 def wait_for_db():
@@ -14,64 +15,70 @@ def wait_for_db():
     retries = 30
     while retries > 0:
         if check_database_connection():
-            print("✅ Database connection established")
+            db_logger.info("Database connection established")
             time.sleep(2)
             return True
         retries -= 1
-        print(f"⏳ Waiting for database... ({retries} attempts remaining)")
+        db_logger.warning(
+            "Waiting for database... ({} attempts remaining)".format(retries))
         time.sleep(1)
     return False
 
 
 def init_db():
     """Initialize database with migrations"""
+    from flask_structured_api.core.db import (
+        check_database_connection, SQLModel, engine,
+        init_migrations, create_migration, upgrade_database
+    )
+
     app = create_app()
     with app.app_context():
+        db_logger.info("Starting database initialization...")
+
         if not wait_for_db():
-            print("❌ Database connection failed")
+            db_logger.error("Database connection failed")
             return False
 
         try:
-            # Check if tables already exist
-            with engine.connect() as conn:
-                result = conn.execute(text("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_name = 'users'
-                    );
-                """))
-                tables_exist = result.scalar()
+            # Initialize migrations tracking first
+            init_migrations(app)
 
-            if tables_exist:
-                print("✅ Database already initialized, skipping setup")
+            # Check if we have any tables at all
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(text("""
+                        SELECT COUNT(*) FROM users;
+                    """))
+                    has_tables = True
+                    user_count = result.scalar()
+                    db_logger.info(f"Found {user_count} users in database")
+                    has_data = user_count > 0
+            except Exception:
+                has_tables = False
+                has_data = False
+                db_logger.info("No existing tables found")
+
+            if not has_tables:
+                db_logger.info("Creating fresh database schema...")
+                create_migration(app, "Initial migration", has_data=False)
+                upgrade_database(app, has_data=False)
                 return True
 
-            # Only drop and recreate if tables don't exist
-            with engine.connect() as conn:
-                conn.execute(text("""
-                    DROP TABLE IF EXISTS api_keys CASCADE;
-                    DROP TABLE IF EXISTS api_storage CASCADE;
-                    DROP TABLE IF EXISTS users CASCADE;
-                    DROP TABLE IF EXISTS alembic_version CASCADE;
-                """))
-                conn.commit()
-                print("✅ Existing tables dropped")
+            if not has_data:
+                db_logger.info("Found empty database, attempting restore...")
+                if restore_database():
+                    db_logger.info("Database restored from backup")
+                    return True
 
-            # Initialize migrations
-            init_migrations(app)
-            print("✅ Migration tracking initialized")
-
-            # Create initial migration
-            migrate()
-            print("✅ Initial migration created")
-
-            # Apply migration
-            upgrade()
-            print("✅ Initial migration applied")
+            # For existing database with data, just stamp current state
+            db_logger.info("Found existing data, stamping current state...")
+            create_migration(app, "Existing data", has_data=True)
+            upgrade_database(app, has_data=True)
             return True
 
         except Exception as e:
-            print("❌ Database setup failed: {}".format(e))
+            db_logger.error(f"Database setup failed: {e}")
             return False
 
 

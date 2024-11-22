@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import gzip
 import os
+from flask_structured_api.core.utils.logger import backup_logger
 from flask_structured_api.core.config import settings
 
 BACKUP_DIR = Path("/backups")
@@ -13,12 +14,12 @@ def main():
     try:
         success = backup_database()
         if success:
-            print("✅ Backup completed successfully")
+            backup_logger.info("✅ Backup completed successfully")
             return 0
-        print("❌ Backup failed")
+        backup_logger.error("❌ Backup failed")
         return 1
     except Exception as e:
-        print(f"❌ Backup failed: {e}")
+        backup_logger.error("❌ Backup failed: {}".format(e))
         return 1
 
 
@@ -50,6 +51,10 @@ def backup_database():
                     "-h", required_vars["POSTGRES_HOST"],
                     "-U", required_vars["POSTGRES_USER"],
                     "-d", required_vars["POSTGRES_DB"],
+                    "--clean",
+                    "--if-exists",
+                    "--no-owner",
+                    "--no-privileges"
                 ], capture_output=True, check=True,
                     env={"PGPASSWORD": required_vars["POSTGRES_PASSWORD"]})
 
@@ -73,12 +78,13 @@ def backup_database():
                 raise Exception("Backup failed: {}".format(
                     process.stderr.decode()))
 
-        print("✅ Backup created successfully: {}".format(backup_file))
+        backup_logger.info(
+            "✅ Backup created successfully: {}".format(backup_file))
         cleanup_backups()
         return True
 
     except Exception as e:
-        print(f"⚠️ Backup failed: {e}")
+        backup_logger.error(f"⚠️ Backup failed: {e}")
         return False
 
 
@@ -112,8 +118,121 @@ def cleanup_backups():
 
             backup.unlink()
         except (IndexError, ValueError) as e:
-            print(f"⚠️ Skipping invalid backup filename: {backup.name}")
+            backup_logger.warning(
+                f"⚠️ Skipping invalid backup filename: {backup.name}")
             continue
+
+
+def check_tables_empty():
+    """Check if all tables in database are empty"""
+    from flask_structured_api.core.db import engine
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            # Get all table names
+            result = conn.execute(text("""
+                SELECT tablename 
+                FROM pg_tables 
+                WHERE schemaname = 'public'
+                AND tablename != 'alembic_version';
+            """))
+            tables = [row[0] for row in result]
+            backup_logger.info("Found tables: {}".format(", ".join(tables)))
+
+            # Check each table for data
+            for table in tables:
+                result = conn.execute(text(f"""
+                    SELECT * FROM {table};
+                """))
+                rows = result.fetchall()
+                count = len(rows)
+                backup_logger.info("Table {} has {} rows".format(table, count))
+                if count > 0:
+                    backup_logger.info("Data in {}: {}".format(
+                        table, [dict(row._mapping) for row in rows]))
+                    return False
+            return True
+    except Exception as e:
+        backup_logger.error("Error checking tables: {}".format(e))
+        return False
+
+
+def drop_all_tables():
+    """Drop all tables in database"""
+    from flask_structured_api.core.db import engine
+    from sqlalchemy import text
+
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("""
+                DROP SCHEMA public CASCADE;
+                CREATE SCHEMA public;
+                GRANT ALL ON SCHEMA public TO public;
+            """))
+            conn.commit()
+            backup_logger.info("✅ All tables dropped")
+            return True
+    except Exception as e:
+        backup_logger.error(f"❌ Failed to drop tables: {e}")
+        return False
+
+
+def restore_database(backup_file=None, force=False):
+    """Restore database from backup"""
+    try:
+        if not force and not check_tables_empty():
+            backup_logger.warning(
+                "Database contains data! Use force=True to overwrite")
+            return False
+
+        required_vars = {
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "db"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "user"),
+            "POSTGRES_DB": os.getenv("POSTGRES_DB", "api"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD")
+        }
+
+        if not backup_file:
+            backups = sorted(BACKUP_DIR.glob("backup_*.sql*"))
+            if not backups:
+                raise Exception("No backup files found")
+            backup_file = backups[-1]
+
+        backup_logger.info("Restoring from: {}".format(backup_file))
+
+        # Drop existing tables if they exist
+        if not drop_all_tables():
+            raise Exception("Failed to prepare database for restore")
+
+        if str(backup_file).endswith('.gz'):
+            with gzip.open(backup_file, 'rb') as gz:
+                process = subprocess.run([
+                    "psql",
+                    "-h", required_vars["POSTGRES_HOST"],
+                    "-U", required_vars["POSTGRES_USER"],
+                    "-d", required_vars["POSTGRES_DB"],
+                ], input=gz.read(), capture_output=True, check=True,
+                    env={"PGPASSWORD": required_vars["POSTGRES_PASSWORD"]})
+        else:
+            process = subprocess.run([
+                "psql",
+                "-h", required_vars["POSTGRES_HOST"],
+                "-U", required_vars["POSTGRES_USER"],
+                "-d", required_vars["POSTGRES_DB"],
+                "-f", str(backup_file)
+            ], capture_output=True, check=True,
+                env={"PGPASSWORD": required_vars["POSTGRES_PASSWORD"]})
+
+        if process.returncode != 0:
+            raise Exception(f"Restore failed: {process.stderr.decode()}")
+
+        backup_logger.info("✅ Database restored successfully")
+        return True
+
+    except Exception as e:
+        backup_logger.error(f"❌ Restore failed: {e}")
+        return False
 
 
 # Only run if called directly

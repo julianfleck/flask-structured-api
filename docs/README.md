@@ -1,6 +1,6 @@
-# Flask API Boilerplate Documentation
+# Flask Structured API Documentation
 
-Welcome to the Flask API Boilerplate documentation. This guide helps you build production-ready APIs with AI capabilities.
+Welcome to the Flask Structured API documentation. This framework provides a robust foundation for building production-ready APIs with built-in storage, authentication, and AI capabilities.
 
 ## 🚀 Quick Start
 
@@ -8,23 +8,20 @@ For the fastest way to get up and running, see our [Getting Started Guide](getti
 
 Essential commands:
 ```bash
-# Development
-flask run --debug
-
-# Database
-flask db upgrade
-
-# Create admin user
-flask users create-admin
-
-# Docker
+# Using Docker (Recommended)
 docker-compose up -d
+docker-compose --workdir /app/src exec api flask db upgrade
+docker-compose --workdir /app/src exec api flask users create-admin
+
+# Local Development
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+pip install -r requirements.txt
 ```
 
 ## 📚 Core Documentation
 
 ### [Getting Started](getting-started/README.md)
-
 - Installation and setup
 - Basic configuration
 - First API endpoint
@@ -32,27 +29,29 @@ docker-compose up -d
 - Quick start examples
 
 ### [Architecture](architecture/README.md)
-- System design and components
+- Model-first design
+- System components
 - Database structure
-- Caching and rate limiting
-- Background tasks & queues
-- Warning collection system
 - Authentication flow
-- AI service integration
+- AI integration
+- Storage system
+- Background tasks
 
 ### [API Reference](api/README.md)
-- Authentication
+- Authentication & security
 - Endpoints overview
 - Response formats
 - Error handling
 - Rate limiting
+- OpenAPI/Swagger docs
 
 ### [Development](development/README.md)
 - Local setup
 - Code style
 - Testing
-- Database migrations
 - CLI tools
+- Debugging
+- Type hints
 
 ### [Deployment](deployment/README.md)
 - Docker deployment
@@ -94,4 +93,4 @@ CELERY_TASK_DEFAULT_QUEUE=default
 
 ## 📝 License
 
-This project is licensed under the XXX License - see the [LICENSE](../LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.

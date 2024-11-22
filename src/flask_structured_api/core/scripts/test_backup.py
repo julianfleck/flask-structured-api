@@ -1,5 +1,6 @@
 from flask_structured_api.core.scripts.backup_db import backup_database, cleanup_backups
 from flask_structured_api.core.scripts.generate_crontab import generate_crontab
+from flask_structured_api.core.utils.logger import system_logger
 from pathlib import Path
 import os
 
@@ -17,8 +18,9 @@ def test_backup_system():
     backups = list(backup_dir.glob("*.sql*"))
     assert len(backups) > 0, "No backup files created"
 
-    print("✅ Backup test completed successfully")
-    print(f"Created backup files: {[b.name for b in backups]}")
+    system_logger.info("✅ Backup test completed successfully")
+    system_logger.info("Created backup files: {}".format(
+        [b.name for b in backups]))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel
 from .engine import engine, get_session, check_database_connection, init_db
-from .migrations import init_migrations, run_migrations
+from .migrations import init_migrations, create_migration, upgrade_database
 
 __all__ = [
     'SQLModel',
@@ -9,5 +9,6 @@ __all__ = [
     'check_database_connection',
     'init_db',
     'init_migrations',
-    'run_migrations'
+    'create_migration',
+    'upgrade_database'
 ]
