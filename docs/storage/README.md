@@ -17,7 +17,7 @@ Common scenarios where the storage system can help:
 Add storage to any endpoint with a single decorator:
 
 ```python
-from app.core.storage.decorators import store_api_data
+from flask_structured_api.core.storage.decorators import store_api_data
 
 @store_api_data()  # Stores both request and response by default
 def generate_text():

@@ -100,7 +100,7 @@ Common issues and solutions:
 ```python
 # Verify connection
 import psycopg2
-from app.core.config import settings
+from flask_structured_api.core.config import settings
 
 def test_db():
     try:

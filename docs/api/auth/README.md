@@ -42,7 +42,7 @@ This document details the authentication endpoints for user management, login, t
 
 ### Protected Endpoint Example
 ```python
-from app.core.auth import require_auth, require_roles
+from flask_structured_api.core.auth import require_auth, require_roles
 from app.models.enums import UserRole
 
 @app.route('/api/v1/admin/users', methods=['GET'])

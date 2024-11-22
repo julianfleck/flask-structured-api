@@ -169,8 +169,8 @@ AI_API_KEY=your-api-key-here
 1. Create a new endpoint file in `app/api/custom/v1/hello.py`:
    ```python
    from flask import Blueprint
-   from app.core.models.responses import SuccessResponse
-   from app.core.auth import require_auth
+   from flask_structured_api.core.models.responses import SuccessResponse
+   from flask_structured_api.core.auth import require_auth
 
    hello_bp = Blueprint('hello', __name__)
 

@@ -205,7 +205,7 @@ The authentication system provides secure user identification and access control
 Here's a basic example of protecting an endpoint:
 
 ```python
-from app.core.auth import require_auth
+from flask_structured_api.core.auth import require_auth
 
 @app.route('/profile')
 @require_auth

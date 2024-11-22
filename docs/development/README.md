@@ -57,7 +57,7 @@ pre-commit install
 ```python
 # app/api/custom/v1/hello.py
 from flask import Blueprint
-from app.core.auth import require_auth
+from flask_structured_api.core.auth import require_auth
 bp = Blueprint('hello', name)
 @bp.route('/hello')
 @require_auth
