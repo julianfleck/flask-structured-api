@@ -9,6 +9,7 @@ from flask_structured_api.core.db import init_db
 from flask_structured_api.core.handlers import register_error_handlers
 from flask_structured_api.core.middleware import setup_request_context
 from flask_structured_api.core.cli import init_cli
+from flask_structured_api.core.utils.logger import system_logger
 
 _debugger_initialized = False
 
@@ -19,20 +20,42 @@ def _init_debugger():
     if _debugger_initialized:
         return
 
-    # TODO: Check if debugger is already running
     if settings.API_DEBUG and os.getenv('DEBUGPY_ENABLE'):
         try:
             import debugpy
             base_port = int(os.getenv('DEBUGPY_PORT', '5678'))
 
-            for port in range(base_port, base_port + 10):
-                if not is_port_in_use(port):
-                    debugpy.listen(('0.0.0.0', port))
-                    print(f"🐛 Debugpy is listening on port {port}")
+            # Check if debugpy is already listening
+            if hasattr(debugpy, '_listen_socket') and debugpy._listen_socket is not None:
+                system_logger.info("🐛 Debugpy is already listening")
+                _debugger_initialized = True
+                return
+
+            # Check if debugpy is already connected (alternative method)
+            try:
+                if debugpy.is_client_connected():
+                    system_logger.info("🐛 Debugpy is already connected")
                     _debugger_initialized = True
-                    break
+                    return
+            except:
+                pass  # ignore if this check fails
+
+            # Try to initialize debugpy
+            try:
+                debugpy.listen(('0.0.0.0', base_port))
+                system_logger.info(
+                    "🐛 Debugpy is listening on port {}".format(base_port))
+                _debugger_initialized = True
+            except RuntimeError as e:
+                if "Address already in use" in str(e):
+                    system_logger.info(
+                        "🐛 Debugpy appears to be already running on port {}".format(base_port))
+                    _debugger_initialized = True
+                else:
+                    raise
         except Exception as e:
-            print(f"⚠️ Failed to initialize debugger: {e}")
+            system_logger.error(
+                "⚠️ Failed to initialize debugger: {}".format(e), exc_info=True)
 
 
 def is_port_in_use(port: int) -> bool:
