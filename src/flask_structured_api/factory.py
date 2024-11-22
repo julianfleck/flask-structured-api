@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_openapi3 import OpenAPI
-from flask_migrate import Migrate
 from flask_cors import CORS
 import os
 import socket
@@ -80,7 +79,6 @@ def create_app() -> Flask:
 
     # Initialize extensions
     CORS(app)
-    Migrate(app)
     init_db(app)
 
     # Register blueprints
