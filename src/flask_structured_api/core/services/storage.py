@@ -56,11 +56,11 @@ class StorageService:
         self.db.add(storage)
         self.db.commit()
 
-        current_app.logger.debug(
-            f"Stored request for user {user_id} at endpoint '{endpoint}' "
-            f"(compressed: {compress}, ttl: {storage.ttl}, "
-            f"metadata: {storage.storage_metadata})"
-        )
+        # current_app.logger.debug(
+        #     f"Stored request for user {user_id} at endpoint '{endpoint}' "
+        #     f"(compressed: {compress}, ttl: {storage.ttl}, "
+        #     f"metadata: {storage.storage_metadata})"
+        # )
         return storage
 
     def store_response(
@@ -92,11 +92,11 @@ class StorageService:
         self.db.add(storage)
         self.db.commit()
 
-        current_app.logger.debug(
-            f"Stored response for user {user_id} at endpoint '{endpoint}' "
-            f"(compressed: {compress}, ttl: {storage.ttl}, "
-            f"metadata: {storage.storage_metadata})"
-        )
+        # current_app.logger.debug(
+        #     f"Stored response for user {user_id} at endpoint '{endpoint}' "
+        #     f"(compressed: {compress}, ttl: {storage.ttl}, "
+        #     f"metadata: {storage.storage_metadata})"
+        # )
         return storage
 
     def query_storage(
@@ -508,11 +508,5 @@ class StorageService:
                 '/', 1)[1] if '/' in clean_endpoint else clean_endpoint
             variations.add(f"/{base_endpoint}")
             variations.add(base_endpoint)
-
-        # Add debug log
-        current_app.logger.debug(
-            "Normalized endpoint '{}' to variations: {}".format(
-                endpoint, variations)
-        )
 
         return list(variations)

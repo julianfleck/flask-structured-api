@@ -2,6 +2,7 @@ from functools import wraps
 from flask import current_app, g, request
 from time import time
 import click
+import json
 
 
 def setup_request_logging():
@@ -10,10 +11,12 @@ def setup_request_logging():
     current_app.logger.info(
         'Request: {} {}'.format(request.method, request.path),
         extra={
-            "request_id": g.request_id,
+            "request_id": g.request_id if hasattr(g, 'request_id') else None,
             "method": request.method,
             "path": request.path,
-            "remote_addr": request.remote_addr
+            "remote_addr": request.remote_addr,
+            # Add user_id to logs
+            "user_id": g.user_id if hasattr(g, 'user_id') else None
         }
     )
 
@@ -75,7 +78,8 @@ def log_request(f):
     """Decorator to log incoming requests"""
     @wraps(f)
     def decorated(*args, **kwargs):
-        setup_request_logging()
+        if request:
+            setup_request_logging()
         return f(*args, **kwargs)
     return decorated
 
@@ -85,7 +89,10 @@ def log_response(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         response = f(*args, **kwargs)
-        return setup_response_logging(response)
+        # Only log if we're in a request context
+        if request:
+            return setup_response_logging(response)
+        return response
     return decorated
 
 
@@ -129,3 +136,57 @@ def log_function(f):
             )
             raise
     return wrapper
+
+
+def debug_request(f):
+    """Decorator to log detailed request information for debugging"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if request:
+            debug_info = {
+                'headers': dict(request.headers),
+                'method': request.method,
+                'path': request.path,
+                'query_params': request.args,
+                'form_data': request.form,
+                'json_data': request.get_json(silent=True),
+                'remote_addr': request.remote_addr,
+                'user_id': g.user_id if hasattr(g, 'user_id') else None,
+                'request_id': g.request_id if hasattr(g, 'request_id') else None
+            }
+            current_app.logger.debug(
+                'Debug Request Details:\n' + json.dumps(debug_info, indent=2),
+                extra=debug_info
+            )
+        return f(*args, **kwargs)
+    return decorated
+
+
+def debug_response(f):
+    """Decorator to log detailed response information for debugging"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        response = f(*args, **kwargs)
+        if request:  # Ensure we're in request context
+            # Get response data safely
+            if hasattr(response, 'get_json'):
+                response_data = response.get_json()
+            elif isinstance(response, dict):
+                response_data = response
+            else:
+                response_data = str(response)
+
+            debug_info = {
+                'response_data': response_data,
+                'status_code': response.status_code if hasattr(response, 'status_code') else 200,
+                'response_headers': dict(response.headers) if hasattr(response, 'headers') else {},
+                'duration': time() - g.request_start_time if hasattr(g, 'request_start_time') else None,
+                'user_id': g.user_id if hasattr(g, 'user_id') else None,
+                'request_id': g.request_id if hasattr(g, 'request_id') else None
+            }
+            current_app.logger.debug(
+                'Debug Response Details:\n' + json.dumps(debug_info, indent=2),
+                extra=debug_info
+            )
+        return response
+    return decorated
