@@ -10,6 +10,7 @@ from flask_structured_api.core.handlers import register_error_handlers
 from flask_structured_api.core.middleware import setup_request_context
 from flask_structured_api.core.cli import init_cli
 from flask_structured_api.core.utils.logger import system_logger
+from flask_structured_api.core.middleware.logging import setup_request_logging, setup_response_logging
 
 _debugger_initialized = False
 
@@ -115,5 +116,11 @@ def create_app() -> Flask:
     register_error_handlers(app)
     setup_request_context(app)
     init_cli(app)
+
+    # Register logging middleware using the setup functions directly
+    # Use setup function, not decorator
+    app.before_request(setup_request_logging)
+    # Use setup function, not decorator
+    app.after_request(setup_response_logging)
 
     return app
