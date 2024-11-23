@@ -1,9 +1,7 @@
 from redis import Redis, ConnectionPool, RedisError
 from flask_structured_api.core.config import settings
 from flask_structured_api.core.exceptions import APIError
-import logging
-
-logger = logging.getLogger(__name__)
+from flask_structured_api.core.utils.logger import system_logger
 
 
 def create_redis_client() -> Redis:
@@ -18,13 +16,20 @@ def create_redis_client() -> Redis:
             retry_on_timeout=True
         )
         client = Redis(connection_pool=pool)
-        # Test connection
         client.ping()
+        system_logger.info("Redis connection established")
         return client
     except RedisError as e:
-        logger.error(f"Redis connection failed: {str(e)}")
-        # Don't raise here, return None so the app can still function
-        return None
+        system_logger.error(
+            f"Redis connection failed: {str(e)}. "
+            "Please ensure Redis is running and REDIS_URL is correct in your .env file. "
+            "See docs/getting-started/README.md for setup instructions."
+        )
+        raise APIError(
+            message="Redis service unavailable. Please check your configuration.",
+            code="REDIS_UNAVAILABLE",
+            status_code=503
+        )
 
 
 # Global redis client
@@ -32,7 +37,7 @@ redis_client = create_redis_client()
 
 
 def get_redis() -> Redis:
-    """Get Redis client with fallback"""
+    """Get Redis client"""
     if redis_client is None:
         raise APIError(
             message="Redis service unavailable",
