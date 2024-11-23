@@ -1,23 +1,29 @@
-# Flask Structured API Documentation
+# Flask Structured API
 
-Welcome to the Flask Structured API documentation. This framework provides a robust foundation for building production-ready APIs with built-in storage, authentication, and AI capabilities.
+A production-ready Flask API framework with built-in storage, authentication, and AI capabilities. Designed for developers who need a robust foundation for building scalable APIs while following best practices.
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-For the fastest way to get up and running, see our [Getting Started Guide](getting-started/README.md).
+Choose your preferred installation method:
 
-Essential commands:
-```bash
-# Using Docker (Recommended)
-docker-compose up -d
-docker-compose --workdir /app/src exec api flask db upgrade
-docker-compose --workdir /app/src exec api flask users create-admin
+1. **PyPI Package** (Simplest)
+   ```bash
+   pip install flask-structured-api
+   mkdir my-api && cd my-api
+   flask-api init
+   ```
 
-# Local Development
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-pip install -r requirements.txt
-```
+2. **Docker Setup** (Recommended)
+   ```bash
+   mkdir my-api && cd my-api
+   git init
+   git remote add boilerplate https://github.com/julianfleck/flask-structured-api.git
+   git pull boilerplate main --allow-unrelated-histories
+   docker-compose up -d
+   ```
+
+See our [Getting Started Guide](docs/getting-started/README.md) for detailed setup instructions and configuration options.
+
 
 ## 📚 Core Documentation
 

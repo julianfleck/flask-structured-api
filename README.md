@@ -37,37 +37,75 @@ A production-ready Flask API framework with built-in storage, authentication, an
 - Comprehensive error handling
 - Warning collection system
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-### Using Docker (Recommended)
+### Option 1: Using PyPI Package (Simplest)
 ```bash
-# Clone and setup
-git clone https://github.com/julianfleck/flask-structured-api.git
-cd flask-structured-api
-cp .env.example .env
+# Install the core package
+pip install flask-structured-api
 
-# Start services
-docker-compose up -d
+# Create new project
+mkdir my-api && cd my-api
 
-# Initialize database
-docker-compose exec api flask db upgrade
-docker-compose exec api flask users create-admin
-```
-
-### Local Development
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# or
-venv\Scripts\activate     # Windows
+# Initialize basic structure
+flask-api init
 
 # Install dependencies
 pip install -r requirements.txt
-pip install -r requirements-dev.txt
+```
 
-# Setup pre-commit hooks
-pre-commit install
+Note: When using the PyPI package, you'll need to set up your own PostgreSQL and Redis services.
+
+### Option 2: Clean Initialize with Docker (Recommended)
+For a fresh start with full Docker support:
+
+```bash
+# Create and enter project directory
+mkdir my-api && cd my-api
+
+# Initialize empty git repo
+git init
+
+# Add boilerplate as remote
+git remote add boilerplate https://github.com/julianfleck/flask-structured-api.git
+
+# Pull files without history
+git pull boilerplate main --allow-unrelated-histories
+
+# Make initial commit
+git add .
+git commit -m "Initial commit from boilerplate"
+
+# Start services
+docker-compose up -d
+```
+
+### Option 3: Direct Clone
+If you want to preserve boilerplate history (not recommended for production):
+
+```bash
+# Clone the repo
+git clone https://github.com/julianfleck/flask-structured-api.git my-api
+cd my-api
+
+# Start services
+docker-compose up -d
+```
+
+
+## ⚙️ Configuration
+
+Essential environment variables:
+```env
+# Required
+FLASK_APP=flask_structured_api.main:app
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=your-secret-key
+
+# Optional
+AI_PROVIDER=openai
+AI_API_KEY=your-api-key
 ```
 
 ## 📚 Documentation
@@ -107,21 +145,6 @@ from flask_structured_api.core.storage import store_api_data
 def generate():
     result = ai_service.generate(request.json)
     return SuccessResponse(data=result).dict()
-```
-
-## ⚙️ Configuration
-
-Essential environment variables:
-```env
-# Required
-FLASK_APP=flask_structured_api.main:app
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-REDIS_URL=redis://localhost:6379/0
-SECRET_KEY=your-secret-key
-
-# Optional
-AI_PROVIDER=openai
-AI_API_KEY=your-api-key
 ```
 
 ## 🤝 Contributing

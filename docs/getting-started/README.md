@@ -10,43 +10,85 @@ Before you begin, ensure you have:
 - Redis 6 or higher
 - Docker and docker-compose (optional, but recommended)
 
-## Installation
+## Installation Options
 
-### Option 1: Using Docker (Recommended)
+### Option 1: Using PyPI Package (Simplest)
 
-1. Clone the repository:
+1. Install the core package:
    ```bash
-   git clone https://github.com/julianfleck/flask-structured-api.git
-   cd flask-structured-api
+   pip install flask-structured-api
    ```
 
-2. Copy and configure environment variables:
+2. Create project structure:
+   ```bash
+   mkdir my-api && cd my-api
+   flask-api init
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Set up required services:
+   - PostgreSQL 14 or higher
+   - Redis 6 or higher
+
+5. Configure environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database and Redis connection details
+   ```
+
+Note: When using the PyPI package, you'll need to set up your own PostgreSQL and Redis services.
+
+### Option 2: Using Docker (Recommended)
+
+1. Create and enter project directory:
+   ```bash
+   mkdir my-api && cd my-api
+   ```
+
+2. Initialize git and pull boilerplate:
+   ```bash
+   git init
+   git remote add boilerplate https://github.com/julianfleck/flask-structured-api.git
+   git pull boilerplate main --allow-unrelated-histories
+   ```
+
+3. Make initial commit:
+   ```bash
+   git add .
+   git commit -m "Initial commit from boilerplate"
+   ```
+
+4. Configure environment:
    ```bash
    cp .env.example .env
    # Edit .env with your settings
    ```
 
-3. Start the services:
+5. Start services:
    ```bash
    docker-compose up -d
    ```
 
-4. Run database migrations:
+6. Run database migrations:
    ```bash
    docker-compose --workdir /app/src exec api flask db upgrade
    ```
 
-5. Create an admin user:
+7. Create an admin user:
    ```bash
    docker-compose --workdir /app/src exec api flask users create-admin
    ```
 
-### Option 2: Local Development
+### Option 3: Local Development
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/julianfleck/flask-structured-api.git
-   cd flask-structured-api
+   git clone https://github.com/julianfleck/flask-structured-api.git my-api
+   cd my-api
    ```
 
 2. Create and activate virtual environment:
@@ -127,80 +169,6 @@ AI_API_KEY=your-api-key-here
    }
    ```
 
-## Authentication Options
-
-1. Using CLI Tools (recommended for development):
-   ```bash
-   # Create JWT token
-   flask tokens create --email user@example.com --expires 60
-
-   # Create API key
-   flask api-keys create --email user@example.com --name "Dev API" --expires 30
-
-   # List and manage API keys
-   flask api-keys list --email user@example.com
-   flask api-keys revoke --email user@example.com --key-id 123
-   ```
-
-2. Using HTTP Endpoints:
-   ```bash
-   # Login to get JWT tokens
-   curl -X POST http://localhost:5000/api/v1/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{
-       "email": "user@example.com",
-       "password": "your_password"
-     }'
-
-   # Create API key using JWT token
-   curl -X POST http://localhost:5000/api/v1/auth/api-keys \
-     -H "Authorization: Bearer your_access_token" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "name": "Production API",
-       "scopes": ["read:items", "write:items"]
-     }'
-   ```
-
-   Save any returned tokens or API keys securely - they won't be shown again!
-
-## Creating Your First Endpoint
-
-1. Create a new endpoint file in `app/api/custom/v1/hello.py`:
-   ```python
-   from flask import Blueprint
-   from flask_structured_api.core.models.responses import SuccessResponse
-   from flask_structured_api.core.auth import require_auth
-
-   hello_bp = Blueprint('hello', __name__)
-
-   @hello_bp.route('/hello', methods=['GET'])
-   @require_auth
-   def hello_world():
-       return SuccessResponse(
-           message="Hello from Flask API!",
-           data={"version": "1.0.0"}
-       ).dict()
-   ```
-
-2. Register the blueprint in `app/custom/init.py`:
-   ```python
-   from flask import Blueprint
-   from app.api.custom.v1.hello import hello_bp
-
-   api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
-   api_v1.register_blueprint(hello_bp, url_prefix='/hello')
-   ```
-
-3. Test your endpoint:
-   ```bash
-   # Using JWT token
-   curl -H "Authorization: Bearer your-token" http://localhost:5000/api/v1/hello
-
-   # Using API key
-   curl -H "X-API-Key: your-api-key" http://localhost:5000/api/v1/hello
-   ```
-   
 ## Next Steps
 
 - [Explore the Architecture](../architecture/README.md)
