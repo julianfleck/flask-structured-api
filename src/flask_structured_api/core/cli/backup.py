@@ -1,12 +1,13 @@
+from datetime import datetime
+from pathlib import Path
+
 import click
 from flask.cli import AppGroup
-from pathlib import Path
-from datetime import datetime
 
-backup_cli = AppGroup('backup', help='Database backup management')
+backup_cli = AppGroup("backup", help="Database backup management")
 
 
-@backup_cli.command('list')
+@backup_cli.command("list")
 def list_backups():
     """List all available backups"""
     backup_dir = Path("/backups")
@@ -14,8 +15,9 @@ def list_backups():
         click.echo("No backups directory found")
         return
 
-    backups = sorted(backup_dir.glob("*.sql*"),
-                     key=lambda x: x.stat().st_mtime, reverse=True)
+    backups = sorted(
+        backup_dir.glob("*.sql*"), key=lambda x: x.stat().st_mtime, reverse=True
+    )
     if not backups:
         click.echo("No backups found")
         return
@@ -29,16 +31,19 @@ def list_backups():
         click.echo(f"   📊 {size:.2f} MB\n")
 
 
-@backup_cli.command('create')
+@backup_cli.command("create")
 def create_backup():
     """Create a new backup manually"""
     from flask_structured_api.core.scripts.backup_db import backup_database
+
     backup_database()
 
 
-@backup_cli.command('restore')
-@click.argument('backup_file', required=False)
-@click.option('--force', '-f', is_flag=True, help='Force restore even if database contains data')
+@backup_cli.command("restore")
+@click.argument("backup_file", required=False)
+@click.option(
+    "--force", "-f", is_flag=True, help="Force restore even if database contains data"
+)
 def restore_backup(backup_file=None, force=False):
     """Restore database from backup file. If no file specified, uses latest backup."""
     from flask_structured_api.core.scripts.backup_db import restore_database

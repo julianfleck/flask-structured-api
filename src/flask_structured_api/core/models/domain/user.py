@@ -1,14 +1,16 @@
-from typing import Optional, Dict, Any, List
-from sqlmodel import Field, Relationship
 from datetime import datetime
-from sqlalchemy import JSON
+from typing import Any, Dict, List, Optional
 
-from flask_structured_api.core.models.domain.base import CoreModel
+from sqlalchemy import JSON
+from sqlmodel import Field, Relationship
+
 from flask_structured_api.core.enums import UserRole
+from flask_structured_api.core.models.domain.base import CoreModel
 
 
 class User(CoreModel, table=True):
     """User model with enhanced tracking fields"""
+
     __tablename__ = "users"
 
     # Primary key
@@ -31,17 +33,10 @@ class User(CoreModel, table=True):
 
     # Relationships
     api_keys: List["APIKey"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
     )
     storage_entries: List["APIStorage"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"lazy": "selectin"}
+        back_populates="user", sa_relationship_kwargs={"lazy": "selectin"}
     )
 
-    model_config = {
-        "json_schema_extra": {
-            "preferences": {},
-            "permissions": []
-        }
-    }
+    model_config = {"json_schema_extra": {"preferences": {}, "permissions": []}}

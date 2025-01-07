@@ -1,14 +1,14 @@
 {
     "version": "0.2.0",
     "configurations": [
-        
+
         {
             "name": "Flask API Debug",
             "type": "python",
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "app.main:create_app",
+                "FLASK_APP": "app.main:create_flask_app",
                 "FLASK_ENV": "development",
                 "DEBUGPY_ENABLE": "True",
                 "API_DEBUG": "True"
@@ -38,4 +38,4 @@
             ]
         }
     ]
-} 
+}

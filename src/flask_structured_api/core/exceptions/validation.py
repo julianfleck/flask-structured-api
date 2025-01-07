@@ -1,6 +1,7 @@
-from .base import APIError
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+from .base import APIError
 
 
 class ValidationErrorCode(str, Enum):
@@ -23,14 +24,11 @@ class ValidationError(APIError):
         message: str,
         code: ValidationErrorCode,
         field: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             message=message,
             code=code.value,
-            details={
-                "field": field,
-                "context": context or {}
-            },
-            status_code=422
+            details={"field": field, "context": context or {}},
+            status_code=422,
         )

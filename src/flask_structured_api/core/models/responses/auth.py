@@ -1,11 +1,14 @@
-from flask_structured_api.core.models.responses.base_model import BaseResponseModel
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from pydantic import Field
+
+from flask_structured_api.core.models.responses.base_model import BaseResponseModel
 
 
 class TokenResponse(BaseResponseModel):
     """Authentication token response"""
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -14,6 +17,7 @@ class TokenResponse(BaseResponseModel):
 
 class UserResponse(BaseResponseModel):
     """User data response with detailed user information"""
+
     id: int
     email: str
     full_name: str

@@ -1,0 +1,4 @@
+core:
+  account: mail@julianfleck.net
+  disable_usage_reporting: 'True'
+  project: windy-augury-442117-b9

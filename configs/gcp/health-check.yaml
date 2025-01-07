@@ -1,0 +1,15 @@
+checkIntervalSec: 30
+creationTimestamp: '2024-11-30T17:34:34.401-08:00'
+description: Default kubernetes L7 Loadbalancing health check for NEG.
+healthyThreshold: 2
+httpHealthCheck:
+  portSpecification: USE_SERVING_PORT
+  proxyHeader: NONE
+  requestPath: /health
+id: '6196406027511268293'
+kind: compute#healthCheck
+name: k8s1-e20c90b9-default-api-80-720bbe32
+selfLink: https://www.googleapis.com/compute/v1/projects/windy-augury-442117-b9/global/healthChecks/k8s1-e20c90b9-default-api-80-720bbe32
+timeoutSec: 10
+type: HTTP
+unhealthyThreshold: 3

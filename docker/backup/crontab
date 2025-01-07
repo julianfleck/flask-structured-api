@@ -10,5 +10,4 @@ export POSTGRES_DB=${POSTGRES_DB:-api}
 
 # Run backup daily at midnight
 0 0 * * * mkdir -p /backups && python -m flask_structured_api.core.scripts.backup_db >> /var/log/cron.log 2>&1
-0 1 * * * /usr/local/bin/python /app/src/flask_structured_api/core/scripts/cleanup_backups.py >> /var/log/cron.log 2>&1 
-
+0 1 * * * /usr/local/bin/python /app/src/flask_structured_api/core/scripts/cleanup_backups.py >> /var/log/cron.log 2>&1

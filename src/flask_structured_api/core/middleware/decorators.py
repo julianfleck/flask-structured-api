@@ -1,10 +1,12 @@
 from functools import wraps
-from flask import current_app, g, request
 from time import time
+
+from flask import current_app, g, request
 
 
 def log_function_call(func):
     """Decorator to log function entry and exit with timing"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time()
@@ -13,8 +15,8 @@ def log_function_call(func):
             extra={
                 "function": func.__name__,
                 "module": func.__module__,
-                "request_id": getattr(g, 'request_id', None)
-            }
+                "request_id": getattr(g, "request_id", None),
+            },
         )
 
         try:
@@ -26,8 +28,8 @@ def log_function_call(func):
                 extra={
                     "function": func.__name__,
                     "duration": duration,
-                    "success": True
-                }
+                    "success": True,
+                },
             )
             return result
 
@@ -39,9 +41,9 @@ def log_function_call(func):
                     "function": func.__name__,
                     "duration": duration,
                     "error": str(e),
-                    "success": False
+                    "success": False,
                 },
-                exc_info=True
+                exc_info=True,
             )
             raise
 

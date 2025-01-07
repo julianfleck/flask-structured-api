@@ -1,0 +1,118 @@
+# api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: api
+    template:
+        metadata:
+            labels:
+                app: api
+        spec:
+            initContainers:
+                - name: wait-for-db
+                  image: postgres:15
+                  command:
+                      [
+                          'sh',
+                          '-c',
+                          'until pg_isready -h $POSTGRES_HOST -p 5432; do echo waiting for database; sleep 2; done;',
+                      ]
+                  env:
+                      - name: POSTGRES_HOST
+                        valueFrom:
+                            secretKeyRef:
+                                name: app-secrets
+                                key: POSTGRES_HOST
+                - name: init-migrations
+                  image: busybox
+                  command:
+                      [
+                          'sh',
+                          '-c',
+                          'mkdir -p /app/migrations && chown -R 1000:1000 /app/migrations',
+                      ]
+                  volumeMounts:
+                      - name: migrations-volume
+                        mountPath: /app/migrations
+            containers:
+                - name: api
+                  image: gcr.io/windy-augury-442117-b9/api:latest
+                  imagePullPolicy: Always
+                  envFrom:
+                      - secretRef:
+                            name: app-secrets
+                  env:
+                      - name: FLASK_APP_CELERY_BROKER_URL
+                        valueFrom:
+                            secretKeyRef:
+                                name: app-secrets
+                                key: CELERY_BROKER_URL
+                      - name: FLASK_APP_CELERY_RESULT_BACKEND
+                        valueFrom:
+                            secretKeyRef:
+                                name: app-secrets
+                                key: CELERY_RESULT_BACKEND
+                      - name: FLASK_MIGRATIONS_DIR
+                        value: /app/migrations
+                  ports:
+                      - containerPort: 2342
+                  volumeMounts:
+                      - name: migrations-volume
+                        mountPath: /app/migrations
+            volumes:
+                - name: migrations-volume
+                  persistentVolumeClaim:
+                      claimName: migrations-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: api
+    annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+        cloud.google.com/backend-config: '{"default": "api-backend-config"}'
+spec:
+    type: ClusterIP
+    selector:
+        app: api
+    ports:
+        - port: 80
+          targetPort: 2342
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: api-ingress
+    annotations:
+        kubernetes.io/ingress.global-static-ip-name: 'api-static-ip'
+        networking.gke.io/managed-certificates: 'api-certificate'
+        cloud.google.com/health-check-path: '/health'
+        networking.gke.io/ssl-policy: 'modern-ssl-policy'
+#        nginx.ingress.kubernetes.io/enable-cors: "true"
+#        nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, OPTIONS"
+#        nginx.ingress.kubernetes.io/cors-allow-origin: "https://oecd-stip-compass-prefill.vercel.app,http://localhost:3000"
+#        nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+#        nginx.ingress.kubernetes.io/configuration-snippet: |
+#          if ($http_origin ~* (https://oecd-stip-compass-prefill.vercel.app|http://localhost:3000)) {
+#            add_header 'Access-Control-Allow-Origin' "$http_origin" always;
+#            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+#            add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,x-api-key' always;
+#            add_header 'Access-Control-Allow-Credentials' 'true' always;
+#          }
+spec:
+    rules:
+        - host: 35.244.173.252.nip.io
+          http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: api
+                            port:
+                                number: 80

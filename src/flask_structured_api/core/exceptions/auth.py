@@ -13,6 +13,5 @@ class InvalidCredentialsError(AuthenticationError):
 
     def __init__(self):
         super().__init__(
-            message="Invalid email or password",
-            code="AUTH_INVALID_CREDENTIALS"
+            message="Invalid email or password", code="AUTH_INVALID_CREDENTIALS"
         )

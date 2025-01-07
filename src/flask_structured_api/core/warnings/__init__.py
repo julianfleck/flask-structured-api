@@ -1,7 +1,7 @@
 # app/core/warnings.py
-from typing import List, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import List, Optional
 
 from flask_structured_api.core.enums import WarningCode, WarningSeverity
 
@@ -9,6 +9,7 @@ from flask_structured_api.core.enums import WarningCode, WarningSeverity
 @dataclass
 class Warning:
     """Warning message structure"""
+
     message: str
     code: WarningCode
     severity: WarningSeverity = WarningSeverity.MEDIUM
@@ -24,27 +25,32 @@ class Warning:
 
 class WarningCollector:
     """Warning collection utility"""
+
     _request_warnings = {}
 
     @classmethod
     def get_instance(cls):
         """Get request-scoped instance"""
         from flask import g
+
         request_id = g.request_id  # Use the existing request_id from Flask's g object
         if request_id not in cls._request_warnings:
             cls._request_warnings[request_id] = []
         return cls._request_warnings[request_id]
 
     @classmethod
-    def add_warning(cls, message: str, code: WarningCode, severity: WarningSeverity = WarningSeverity.MEDIUM, priority: int = 0):
+    def add_warning(
+        cls,
+        message: str,
+        code: WarningCode,
+        severity: WarningSeverity = WarningSeverity.MEDIUM,
+        priority: int = 0,
+    ):
         """Add new warning"""
         warnings = cls.get_instance()
-        warnings.append(Warning(
-            message=message,
-            code=code,
-            severity=severity,
-            priority=priority
-        ))
+        warnings.append(
+            Warning(message=message, code=code, severity=severity, priority=priority)
+        )
 
     @classmethod
     def get_warnings(cls) -> List[Warning]:
@@ -78,5 +84,6 @@ class WarningCollector:
     def clear_warnings(cls):
         """Clear all warnings"""
         from flask import request
-        request_id = request.environ.get('REQUEST_ID', 'default')
+
+        request_id = request.environ.get("REQUEST_ID", "default")
         cls._request_warnings[request_id] = []

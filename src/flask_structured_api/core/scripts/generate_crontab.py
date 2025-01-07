@@ -1,5 +1,6 @@
-from flask_structured_api.core.config import settings
 import re
+
+from flask_structured_api.core.config import settings
 
 
 def schedule_to_cron(schedule: str) -> str:
@@ -10,7 +11,7 @@ def schedule_to_cron(schedule: str) -> str:
         "@monthly": "0 0 1 * *",
         "@weekly": "0 0 * * 0",
         "@daily": "0 0 * * *",
-        "@hourly": "0 * * * *"
+        "@hourly": "0 * * * *",
     }
 
     if schedule in macros:

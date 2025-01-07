@@ -7,10 +7,10 @@ class ScriptBase:
     def setup_environment(cls):
         """Setup script environment"""
         # Force development mode for scripts
-        os.environ['FLASK_ENV'] = 'development'
-        os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
-        os.environ['PYTHONPATH'] = '/app/src'
-        os.environ['DEBUGPY_ENABLE'] = ''  # Disable debugger for scripts
+        os.environ["FLASK_ENV"] = "development"
+        os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
+        os.environ["PYTHONPATH"] = "/app/src"
+        os.environ["DEBUGPY_ENABLE"] = ""  # Disable debugger for scripts
 
         # Disable frozen modules at runtime
         sys.frozen = False

@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flask-structured-api"
+dynamic = ["version"]
+description = "A structured Flask API boilerplate with built-in AI capabilities, featuring SQLModel ORM and Pydantic validation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+keywords = [
+    "flask", "api", "boilerplate", "ai", "structured",
+    "sqlmodel", "pydantic", "orm", "validation",
+    "postgresql", "redis", "celery", "openapi", "jwt", "authentication", "auth"
+]
+authors = [
+    {name = "Julian Fleck", email = "dev@julianfleck.net"}
+]
+dependencies = [
+    "Flask>=3.1.0,<4.0.0",
+    "flask-openapi3>=4.0.2,<5.0.0",
+    "flask-sqlalchemy>=3.1.1,<4.0.0",
+    "flask-migrate>=4.0.7,<5.0.0",
+    "Werkzeug>=3.1.3,<4.0.0",
+    "gunicorn>=21.2.0,<22.0.0",
+    "SQLAlchemy>=2.0.36,<3.0.0",
+    "sqlmodel>=0.0.22,<0.1.0",
+    "psycopg2-binary>=2.9.9,<3.0.0",
+    "alembic>=1.13.1,<2.0.0",
+    "PyJWT>=2.10.0,<3.0.0",
+    "passlib>=1.7.4,<2.0.0",
+    "flask-cors>=4.0.0,<5.0.0",
+    "redis>=5.2.0,<6.0.0",
+    "celery>=5.3.6,<6.0.0",
+    "flower>=2.0.1,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "email-validator>=2.1.0,<3.0.0",
+    "pydantic[email]>=2.5.0,<3.0.0",
+    "pydantic-settings>=2.6.1,<3.0.0",
+    "psutil>=6.1.0,<7.0.0",
+    "prometheus-client>=0.19.0,<1.0.0"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Flask",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Database :: Front-Ends",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers"
+]
+
+[project.optional-dependencies]
+dev = [
+    "debugpy>=1.8.8,<2.0.0",
+    "black>=24.1.1,<25.0.0",
+    "isort>=5.13.2,<6.0.0",
+    "flake8>=7.0.0,<8.0.0",
+    "mypy>=1.8.0,<2.0.0",
+    "pre-commit>=3.6.0,<4.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/julianfleck/flask-structured-api"
+Documentation = "https://github.com/julianfleck/flask-structured-api#readme"
+Repository = "https://github.com/julianfleck/flask-structured-api.git"
+Issues = "https://github.com/julianfleck/flask-structured-api/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["flask_structured_api*"]
+exclude = ["tests*", "backups*"]
+
+[tool.setuptools.package-data]
+flask_structured_api = [
+    "templates/api/**/*",
+    "templates/custom/**/*",
+    "**/*.py",
+    "**/*.html",
+    "**/*.j2",
+    "**/.gitkeep"
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    "*.so",
+    "*.dylib",
+    "*~",
+    ".git*",
+    ".DS_Store",
+    "__pycache__",
+    "*.egg-info"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.setuptools.dynamic]
+version = {attr = "flask_structured_api._version.get_version"}

@@ -4,24 +4,23 @@ services:
   api:
     build:
       context: .
-      target: api
+      target: ${ENVIRONMENT:-development}
       args:
         ENVIRONMENT: ${ENVIRONMENT:-development}
+    environment:
+      - PYTHONPATH=/app/src
+      - FLASK_APP=flask_structured_api.factory:create_flask_app()
     ports:
       - "${API_PORT:-5000}:${API_PORT:-5000}"
       - "${DEBUGPY_PORT:-5678}:${DEBUGPY_PORT:-5678}"
     env_file: .env
     volumes:
-      - ./src/flask_structured_api:/app/src/flask_structured_api
-      - ./backups:/backups
-      - ./migrations:/app/migrations
-      - backup_data:/backups-volume
-    command: >
-      sh -c "if [ \"$${ENVIRONMENT:-development}\" = \"development\" ]; then
-        flask run --host=0.0.0.0 --debug;
-      else
-        gunicorn --workers $${GUNICORN_WORKERS:-4} --bind $${API_HOST:-0.0.0.0}:$${API_PORT:-5000} 'flask_structured_api.main:app';
-      fi"
+      # Mount the entire project directory
+      - .:/app:cached
+      # Mount these as separate volumes to ensure persistence
+      - migrations:/app/migrations
+      - backup_data:/backups
+    entrypoint: ["/bin/sh", "/app/docker/api/entrypoint.sh"]
     networks:
       - app_network
     depends_on:
@@ -47,15 +46,18 @@ services:
       retries: 5
     networks:
       - app_network
+    tmpfs:
+      - /tmp:exec,size=1G
+    command: postgres -c temp_buffers=32MB -c work_mem=32MB -c maintenance_work_mem=128MB
 
   backup:
     build:
       context: .
       target: backup
     volumes:
-      - ./backups:/backups
-      - backup_data:/backups-volume
+      - backup_data:/backups:cached
     environment:
+      - PYTHONPATH=/app/src
       - POSTGRES_HOST=db
       - POSTGRES_USER=${POSTGRES_USER:-user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
@@ -63,10 +65,11 @@ services:
       - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-@daily}
     networks:
       - app_network
-    entrypoint: ["/app/docker/backup/entrypoint.sh"]
     depends_on:
       db:
         condition: service_healthy
+    tmpfs:
+      - /tmp:exec,size=1G
 
   redis:
     image: redis:7-alpine
@@ -74,7 +77,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes --bind 0.0.0.0
+    command: redis-server --appendonly yes --bind 0.0.0.0 --maxmemory 512mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -86,8 +89,13 @@ services:
 volumes:
   postgres_data:
   backup_data:
-  redis_data: 
+    driver: local
+  redis_data:
+  api_src:
+    driver: local
+  migrations:
+    driver: local
 
 networks:
   app_network:
-    driver: bridge 
+    driver: bridge

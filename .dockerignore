@@ -1,0 +1,40 @@
+# Development
+.git/
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+migrations/
+
+# Dependencies
+node_modules/
+
+# Data
+*.log
+backups/
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Explicitly include only what we need
+!src/
+!requirements/
+!docker/
+!setup.py
+!setup.cfg
+!pyproject.toml
+!README.md

@@ -1,0 +1,7 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: api-certificate
+spec:
+  domains:
+    - 35.244.173.252.nip.io 

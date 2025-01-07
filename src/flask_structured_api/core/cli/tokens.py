@@ -5,12 +5,12 @@ from flask_structured_api.core.db import get_session
 from flask_structured_api.core.models.domain import User
 from flask_structured_api.core.services.auth import AuthService
 
-tokens_cli = AppGroup('tokens', help='JWT token management commands')
+tokens_cli = AppGroup("tokens", help="JWT token management commands")
 
 
-@tokens_cli.command('create')
-@click.option('--email', prompt=True, help='User email')
-@click.option('--expires', default=60, help='Token expiry in minutes')
+@tokens_cli.command("create")
+@click.option("--email", prompt=True, help="User email")
+@click.option("--expires", default=60, help="Token expiry in minutes")
 def create_token(email: str, expires: int):
     """Create a JWT token for a user"""
     db = next(get_session())
@@ -21,8 +21,7 @@ def create_token(email: str, expires: int):
         click.echo(f"Error: User {email} not found")
         return
 
-    tokens = auth_service.create_tokens_for_user(
-        user.id, expires_minutes=expires)
+    tokens = auth_service.create_tokens_for_user(user.id, expires_minutes=expires)
     click.echo("\nAccess Token (expires in {} minutes):".format(expires))
     click.echo(tokens.access_token)
     click.echo("\nRefresh Token:")

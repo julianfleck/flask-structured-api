@@ -1,8 +1,9 @@
-from sqlmodel import create_engine, Session
 from typing import Generator
-from flask_structured_api.core.config import settings
-from sqlalchemy import text
 from flask import Flask
+from sqlalchemy import text
+from sqlmodel import Session, create_engine
+
+from flask_structured_api.core.config import settings
 
 # Create database engine with connection pooling
 engine = create_engine(
@@ -36,5 +37,5 @@ def check_database_connection() -> bool:
 
 def init_db(app: Flask = None) -> None:
     """Initialize database tables"""
-    from ..models import SQLModel  # Import all models that need tables
+    from ..models import SQLModel
     SQLModel.metadata.create_all(engine)

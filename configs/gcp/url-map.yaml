@@ -1,0 +1,18 @@
+creationTimestamp: '2024-11-30T17:36:07.423-08:00'
+defaultService: https://www.googleapis.com/compute/v1/projects/windy-augury-442117-b9/global/backendServices/k8s1-e20c90b9-kube-system-default-http-backend-80-8ef303f4
+fingerprint: JIIYcib1iAA=
+hostRules:
+- hosts:
+  - 35.244.173.252.nip.io
+  pathMatcher: host7df2f59a58e121a953e5d57225f8d07b
+id: '1312038101738455912'
+kind: compute#urlMap
+name: k8s2-um-xgbuul6z-default-api-ingress-ufv8p8w5
+pathMatchers:
+- defaultService: https://www.googleapis.com/compute/v1/projects/windy-augury-442117-b9/global/backendServices/k8s1-e20c90b9-kube-system-default-http-backend-80-8ef303f4
+  name: host7df2f59a58e121a953e5d57225f8d07b
+  pathRules:
+  - paths:
+    - /*
+    service: https://www.googleapis.com/compute/v1/projects/windy-augury-442117-b9/global/backendServices/k8s1-e20c90b9-default-api-80-720bbe32
+selfLink: https://www.googleapis.com/compute/v1/projects/windy-augury-442117-b9/global/urlMaps/k8s2-um-xgbuul6z-default-api-ingress-ufv8p8w5

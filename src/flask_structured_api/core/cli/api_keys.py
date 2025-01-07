@@ -1,19 +1,20 @@
-import click
-from flask.cli import AppGroup
 from datetime import datetime, timedelta
 
+import click
+from flask.cli import AppGroup
+
 from flask_structured_api.core.db import get_session
-from flask_structured_api.core.models.domain import User, APIKey
+from flask_structured_api.core.models.domain import APIKey, User
 from flask_structured_api.core.services.auth import AuthService
 
-api_keys_cli = AppGroup('api-keys', help='API key management commands')
+api_keys_cli = AppGroup("api-keys", help="API key management commands")
 
 
-@api_keys_cli.command('create')
-@click.option('--email', prompt=True, help='User email')
-@click.option('--name', prompt=True, help='Key name')
-@click.option('--expires', default=None, type=int, help='Days until expiration')
-@click.option('--scopes', multiple=True, help='Scopes to assign')
+@api_keys_cli.command("create")
+@click.option("--email", prompt=True, help="User email")
+@click.option("--name", prompt=True, help="Key name")
+@click.option("--expires", default=None, type=int, help="Days until expiration")
+@click.option("--scopes", multiple=True, help="Scopes to assign")
 def create_key(email: str, name: str, expires: int, scopes: tuple):
     """Create an API key for a user"""
     db = next(get_session())
@@ -29,10 +30,7 @@ def create_key(email: str, name: str, expires: int, scopes: tuple):
         expires_at = datetime.utcnow() + timedelta(days=expires)
 
     api_key = auth_service.create_api_key(
-        user_id=user.id,
-        name=name,
-        scopes=list(scopes),
-        expires_at=expires_at
+        user_id=user.id, name=name, scopes=list(scopes), expires_at=expires_at
     )
 
     click.echo("\nAPI Key (save this, it won't be shown again):")
@@ -41,8 +39,8 @@ def create_key(email: str, name: str, expires: int, scopes: tuple):
         click.echo(f"\nExpires at: {expires_at}")
 
 
-@api_keys_cli.command('list')
-@click.option('--email', prompt=True, help='User email')
+@api_keys_cli.command("list")
+@click.option("--email", prompt=True, help="User email")
 def list_keys(email: str):
     """List all API keys for a user"""
     db = next(get_session())
@@ -68,9 +66,9 @@ def list_keys(email: str):
         click.echo(f"Scopes: {', '.join(key.scopes)}")
 
 
-@api_keys_cli.command('revoke')
-@click.option('--email', prompt=True, help='User email')
-@click.option('--key-id', prompt=True, type=int, help='API key ID')
+@api_keys_cli.command("revoke")
+@click.option("--email", prompt=True, help="User email")
+@click.option("--key-id", prompt=True, type=int, help="API key ID")
 def revoke_key(email: str, key_id: int):
     """Revoke an API key"""
     db = next(get_session())

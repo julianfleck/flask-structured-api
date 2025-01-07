@@ -1,10 +1,12 @@
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-from flask_structured_api.core.models.responses.base_model import BaseResponseModel
-from flask_structured_api.core.enums import StorageType
-from pydantic import Field
 import json
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from flask import current_app
+from pydantic import Field
+
+from flask_structured_api.core.enums import StorageType
+from flask_structured_api.core.models.responses.base_model import BaseResponseModel
 
 
 class StorageEntryResponse(BaseResponseModel):
@@ -20,6 +22,7 @@ class StorageEntryResponse(BaseResponseModel):
         storage_info: Additional metadata about the storage entry
         data: The actual stored data
     """
+
     id: int
     type: StorageType
     endpoint: str
@@ -31,7 +34,9 @@ class StorageEntryResponse(BaseResponseModel):
     class Config:
         from_attributes = True
         populate_by_name = True
-        def alias_generator(x): return "storage_type" if x == "type" else x
+
+        def alias_generator(x):
+            return "storage_type" if x == "type" else x
 
     @classmethod
     def from_orm(cls, obj):
@@ -48,15 +53,21 @@ class StorageEntryResponse(BaseResponseModel):
         data.storage_info = obj.storage_metadata or {}
         data.type = obj.storage_type
 
-        source_data = obj.request_data if obj.storage_type == StorageType.REQUEST else obj.response_data
+        source_data = (
+            obj.request_data
+            if obj.storage_type == StorageType.REQUEST
+            else obj.response_data
+        )
         if source_data:
             try:
-                raw_data = obj.decompress_data(source_data) if obj.compressed \
-                    else source_data.decode('utf-8')
+                raw_data = (
+                    obj.decompress_data(source_data)
+                    if obj.compressed
+                    else source_data.decode("utf-8")
+                )
                 data.data = json.loads(raw_data) if raw_data else None
             except Exception as e:
-                current_app.logger.warning(
-                    f"Failed to decode {data.type} data: {e}")
+                current_app.logger.warning(f"Failed to decode {data.type} data: {e}")
                 data.data = None
 
         return data
@@ -76,6 +87,7 @@ class SessionListItemResponse(BaseResponseModel):
         entries_shown: Number of entries included in this response
         has_more_entries: Whether there are more entries available
     """
+
     session_id: str
     user_id: int
     created_at: datetime
@@ -97,6 +109,7 @@ class SessionWithEntriesResponse(SessionListItemResponse):
     Additional Attributes:
         entries: List of storage entries belonging to this session
     """
+
     entries: List[StorageEntryResponse]
 
 
@@ -111,6 +124,7 @@ class SimpleSessionListResponse(BaseResponseModel):
         page_size: Number of sessions per page
         has_more: Whether there are more pages available
     """
+
     sessions: List[SessionListItemResponse]
     total: int
     page: int
@@ -129,6 +143,7 @@ class DetailedSessionListResponse(BaseResponseModel):
         page_size: Number of sessions per page
         has_more: Whether there are more pages available
     """
+
     sessions: List[SessionWithEntriesResponse]
     total: int
     page: int
@@ -147,6 +162,7 @@ class StorageListResponse(BaseResponseModel):
         page_size: Number of entries per page
         has_more: Whether there are more pages available
     """
+
     items: List[StorageEntryResponse]
     total: int
     page: int

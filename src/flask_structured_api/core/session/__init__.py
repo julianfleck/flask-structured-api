@@ -1,4 +1,5 @@
 from uuid import uuid4
+
 from flask_structured_api.core.cache import get_redis
 from flask_structured_api.core.exceptions import APIError
 

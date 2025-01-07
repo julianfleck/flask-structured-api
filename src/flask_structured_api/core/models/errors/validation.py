@@ -1,10 +1,13 @@
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
+
 from .base import ErrorDetail
 
 
 class ValidationErrorItem(BaseModel):
     """Validation error item"""
+
     field: str
     message: str
     type: str
@@ -12,6 +15,7 @@ class ValidationErrorItem(BaseModel):
 
 class ValidationErrorDetail(ErrorDetail):
     """Validation error details"""
+
     code: str
     errors: List[ValidationErrorItem]
     details: Optional[Dict[str, Any]] = None

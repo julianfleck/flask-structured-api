@@ -1,13 +1,29 @@
-import time
 import os
 import sys
+import time
+import traceback
+
 from sqlalchemy import text
-from flask_structured_api.core.utils.logger import db_logger
+from flask_migrate import Migrate, upgrade as migrate_upgrade, stamp as migrate_stamp
 
 from flask_structured_api.core.db import check_database_connection
-from flask_structured_api.factory import create_app
-from flask_structured_api.core.scripts.backup_db import restore_database, check_tables_empty, drop_all_tables, backup_database
-from flask_structured_api.core.db.migrations import db  # Import shared instance
+from flask_structured_api.core.db.shared import db  # Import shared instance
+from flask_structured_api.core.db.migrations import init_migrations
+from flask_structured_api.core.scripts.backup_db import (
+    backup_database,
+    check_tables_empty,
+    drop_all_tables,
+    restore_database,
+)
+from flask_structured_api.core.utils.logger import get_standalone_logger
+from flask_structured_api.factory import create_flask_app
+from flask_structured_api.core.models import User
+from flask_structured_api.core.config import settings
+from flask_structured_api.core.scripts.create_tables import create_tables
+from werkzeug.security import generate_password_hash
+
+# Create standalone logger for database initialization
+db_logger = get_standalone_logger("db.init")
 
 
 def wait_for_db():
@@ -20,66 +36,103 @@ def wait_for_db():
             return True
         retries -= 1
         db_logger.warning(
-            "Waiting for database... ({} attempts remaining)".format(retries))
+            "Waiting for database... ({} attempts remaining)".format(retries)
+        )
         time.sleep(1)
     return False
 
 
-def init_db():
-    """Initialize database with migrations"""
-    from flask_structured_api.core.db import (
-        check_database_connection, SQLModel, engine,
-        init_migrations, create_migration, upgrade_database
-    )
+def get_current_alembic_version():
+    """Get the current alembic version from the database"""
+    try:
+        with db.engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT version_num FROM alembic_version")).fetchone()
+            if result:
+                version = result[0]
+                print(f" Current alembic version in database: {version}")
+                return version
+    except Exception as e:
+        print(f"❌ Error reading alembic version: {e}")
+    return None
 
-    app = create_app()
-    with app.app_context():
-        db_logger.info("Starting database initialization...")
 
-        if not wait_for_db():
-            db_logger.error("Database connection failed")
-            return False
+def init_db() -> bool:
+    """Initialize database with required tables"""
+    print("🚀 Starting database initialization (init_db.py)...")
 
-        try:
-            # Initialize migrations tracking first
-            init_migrations(app)
+    try:
+        app = create_flask_app()
+        migrate = Migrate(app, db)
+        print("Created Flask app and initialized Migrate")
 
-            # Check if we have any tables at all
+        with app.app_context():
+            migrations_dir = os.environ.get('FLASK_MIGRATIONS_DIR', '/app/migrations')
+            print("Using migrations directory: {}".format(migrations_dir))
+
+            # Initialize migrations if needed
+            if not os.path.exists(os.path.join(migrations_dir, 'versions')):
+                print("No migrations found, initializing fresh setup...")
+                if not init_migrations(app):
+                    print("❌ Failed to initialize migrations")
+                    return False
+                print("✅ Migrations initialized")
+
+            # Check if tables exist, if not, create them
+            inspector = db.inspect(db.engine)
+            tables = inspector.get_table_names()
+
+            if not tables or 'users' not in tables:
+                print("No tables found or critical table 'users' missing, creating tables...")
+                if not create_tables():
+                    print("❌ Failed to create tables")
+                    return False
+                print("✅ Tables created successfully")
+                db.session.commit()
+
+                # Use Alembic's stamp command to set the version
+                try:
+                    print("Stamping database with current state...")
+                    migrate_stamp(revision='head')
+                    print("✅ Database stamped with current state")
+                except Exception as e:
+                    print(f"❌ Error during stamping: {e}")
+                    return False
+
+            # Create admin user if needed
+            print("Checking for admin user...")
             try:
-                with engine.connect() as conn:
-                    result = conn.execute(text("""
-                        SELECT COUNT(*) FROM users;
-                    """))
-                    has_tables = True
-                    user_count = result.scalar()
-                    db_logger.info(f"Found {user_count} users in database")
-                    has_data = user_count > 0
-            except Exception:
-                has_tables = False
-                has_data = False
-                db_logger.info("No existing tables found")
+                admin = db.session.query(User).filter_by(
+                    email=settings.ADMIN_EMAIL).first()
+                if not admin:
+                    print("Creating admin user...")
+                    admin = User(
+                        email=settings.ADMIN_EMAIL,
+                        full_name=settings.ADMIN_NAME,
+                        role="admin",
+                        is_active=True,
+                        permissions=["*"],
+                        hashed_password=generate_password_hash(settings.ADMIN_PASSWORD)
+                    )
+                    db.session.add(admin)
+                    db.session.commit()
+                    print("✅ Admin user created successfully")
+                else:
+                    print("Admin user already exists")
 
-            if not has_tables:
-                db_logger.info("Creating fresh database schema...")
-                create_migration(app, "Initial migration", has_data=False)
-                upgrade_database(app, has_data=False)
-                return True
+            except Exception as e:
+                print("❌ Failed to create admin user: {}".format(str(e)))
+                print(traceback.format_exc())
+                return False
 
-            if not has_data:
-                db_logger.info("Found empty database, attempting restore...")
-                if restore_database():
-                    db_logger.info("Database restored from backup")
-                    return True
-
-            # For existing database with data, just stamp current state
-            db_logger.info("Found existing data, stamping current state...")
-            create_migration(app, "Existing data", has_data=True)
-            upgrade_database(app, has_data=True)
+            print("✨ Database initialization completed successfully")
             return True
 
-        except Exception as e:
-            db_logger.error(f"Database setup failed: {e}")
-            return False
+    except Exception as e:
+        print("❌ Database setup failed: {}".format(str(e)))
+        print("Traceback:")
+        traceback.print_exc()
+        return False
 
 
 def main():

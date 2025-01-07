@@ -1,9 +1,20 @@
 .DS_Store
 
+TODO.md
+_material/
+logs/
+k8s/
+backups/
+migrations/
+logs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+configs/gcp/
+*stip*
 
 # C extensions
 *.so
@@ -170,3 +181,4 @@ cython_debug/
 # Migration cache files
 **/migrations/__pycache__/
 **/migrations/*.pyc
+k8s/base/secrets.yaml

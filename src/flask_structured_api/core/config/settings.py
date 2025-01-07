@@ -1,6 +1,7 @@
 from typing import Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -12,7 +13,7 @@ class Settings(BaseSettings):
     API_HOST: str = Field("localhost", env="API_HOST")
     API_PORT: int = Field(8000, env="API_PORT")
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
-    FLASK_APP: str = Field("app.main:create_app", env="FLASK_APP")
+    FLASK_APP: str = Field("app.main:create_flask_app", env="FLASK_APP")
     FLASK_ENV: str = Field("development", env="FLASK_ENV")
 
     # PostgreSQL Settings
@@ -43,9 +44,11 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
     JWT_REFRESH_SECRET_KEY: str = Field(..., env="JWT_REFRESH_SECRET_KEY")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
-        default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+        default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
     REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
-        default=10080, env="REFRESH_TOKEN_EXPIRE_MINUTES")  # 7 days
+        default=10080, env="REFRESH_TOKEN_EXPIRE_MINUTES"
+    )  # 7 days
 
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True
@@ -53,15 +56,29 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 3600  # time window in seconds
 
     # AI Service
-    AI_PROVIDER: Optional[str] = "openai"  # or 'azure', 'anthropic'
-    AI_API_KEY: Optional[str] = None
-    AI_MODEL: str = "gpt-4"
-    AI_MAX_TOKENS: int = 2000
-    AI_TEMPERATURE: float = 0.7
+    AI_PROVIDER: Optional[str] = Field("openai", env="AI_PROVIDER")
+    AI_API_KEY: Optional[str] = Field(None, env="AI_API_KEY")
+    AI_MODEL: str = Field("gpt-4o", env="AI_MODEL")
+    AI_MAX_TOKENS: int = Field(3000, env="AI_MAX_TOKENS")
+    AI_TEMPERATURE: float = Field(0.1, env="AI_TEMPERATURE")
 
     # Optional Provider-Specific Settings
-    AI_AZURE_ENDPOINT: Optional[str] = None
-    AI_ANTHROPIC_VERSION: Optional[str] = None
+
+    # OPENAI
+    AI_OPENAI_API_KEY: Optional[str] = Field(None, env="AI_OPENAI_API_KEY")
+    AI_OPENAI_MODEL: str = Field("gpt-4o", env="AI_OPENAI_MODEL")
+
+    # Azure
+    AI_AZURE_API_KEY: Optional[str] = Field(None, env="AI_AZURE_API_KEY")
+    AI_AZURE_MODEL: str = Field("gpt-4", env="AI_AZURE_MODEL")
+    AI_AZURE_ENDPOINT: str = Field(
+        "https://your-resource.openai.azure.com/", env="AI_AZURE_ENDPOINT")
+    AI_AZURE_DEPLOYMENT: str = Field("your-deployment", env="AI_AZURE_DEPLOYMENT")
+    AI_AZURE_API_VERSION: str = Field("2024-02-15-preview", env="AI_AZURE_API_VERSION")
+
+    # Anthropic
+    AI_ANTHROPIC_API_KEY: Optional[str] = Field(None, env="AI_ANTHROPIC_API_KEY")
+    AI_ANTHROPIC_MODEL: str = Field("claude-3.5-sonnet", env="AI_ANTHROPIC_MODEL")
 
     # Background Tasks
     CELERY_BROKER_URL: Optional[str] = None
@@ -73,7 +90,11 @@ class Settings(BaseSettings):
     GUNICORN_THREADS: int = 2
 
     # Monitoring
-    LOG_LEVEL: str = "INFO"
+    @property
+    def LOG_LEVEL(self) -> str:
+        if self.ENVIRONMENT.lower() in ["development", "dev", "local"]:
+            return "DEBUG"
+        return "WARNING"
     SENTRY_DSN: Optional[str] = None
     PROMETHEUS_ENABLED: bool = False
 
@@ -91,13 +112,18 @@ class Settings(BaseSettings):
     # Storage settings
     STORAGE_SESSION_TIMEOUT: int = 30  # minutes
 
+    # Admin User Settings
+    ADMIN_EMAIL: str = Field("mail@julianfleck.net", env="ADMIN_EMAIL")
+    # Default should be changed in production!
+    ADMIN_PASSWORD: str = Field("654c5f6d22a8", env="ADMIN_PASSWORD")
+    ADMIN_NAME: str = Field("Julian Fleck", env="ADMIN_NAME")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="allow",
         env_nested_delimiter="__",
-        # Force environment variable reload
         env_prefix="",
         use_enum_values=True,
     )

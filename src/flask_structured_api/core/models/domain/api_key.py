@@ -1,12 +1,15 @@
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import Field, Relationship
+from typing import List, Optional
+
 from sqlalchemy import JSON
+from sqlmodel import Field, Relationship
+
 from flask_structured_api.core.models.domain.base import CoreModel
 
 
 class APIKey(CoreModel, table=True):
     """API Key model for tracking active keys"""
+
     __tablename__ = "api_keys"
 
     # Primary key
